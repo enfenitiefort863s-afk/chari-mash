@@ -1,29 +1,31 @@
-name: keirin-result
+name: keirin-line
 
 on:
   schedule:
-    # 日本時間 23:40(その日の結果)と 7:20(深夜レースの取りこぼし)
-    - cron: "40 14 * * *"
-    - cron: "20 22 * * *"
-  workflow_dispatch: {}
+    # GitHubのcronはUTC。日本時間 8:00 / 13:00 / 20:00
+    - cron: "0 23 * * *"
+    - cron: "0 4 * * *"
+    - cron: "0 11 * * *"
+  workflow_dispatch: {}   # 手動実行ボタン用
 
 permissions:
-  contents: write
+  contents: write         # 配信した買い目(data/)をリポジトリに保存するため
 
 jobs:
-  result:
+  send:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python keirin_result.py
+      - run: python keirin_run.py
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          VENUES: ${{ vars.VENUES }}
       - name: Save data
         if: always()
         run: |
@@ -32,7 +34,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
           if ! git diff --cached --quiet; then
-            git commit -m "update results"
+            git commit -m "update picks"
             git pull --rebase
             git push
           fi
