@@ -2,15 +2,16 @@ name: keirin-line
 
 on:
   schedule:
+    # GitHubのcronはUTC。日本時間 8:00 / 13:00 / 20:00
     - cron: "0 23 * * *"
     - cron: "0 4 * * *"
     - cron: "0 11 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch: {}   # 手動実行ボタン用
 
 jobs:
   send:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
