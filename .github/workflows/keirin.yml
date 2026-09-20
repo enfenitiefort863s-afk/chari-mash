@@ -26,6 +26,10 @@ jobs:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           VENUES: ${{ vars.VENUES }}
+          SPLIT_MODE: ${{ vars.SPLIT_MODE }}
+          PER_VENUE: ${{ vars.PER_VENUE }}
+          MAX_MESSAGES: ${{ vars.MAX_MESSAGES }}
+          ENRICH_BUDGET: "600"
       - name: Save data
         if: always()
         run: |
