@@ -93,7 +93,9 @@ def enrich_top(races, top=5):
         for r in rs:
             k.rider_rating(r)
         rs.sort(key=lambda r: -r["rating"])
-        for r in rs[:top]:
+        singles = {ln[0] for ln in (rc.get("lines") or []) if len(ln) == 1}   # 飛びつきの判断に必要
+        targets = rs[:top] + [r for r in rs[top:] if r["車"] in singles]
+        for r in targets:
             pid = r["pid"]
             if pid not in k._FORM_CACHE:
                 if time.time() - start > k.ENRICH_BUDGET:
@@ -102,6 +104,7 @@ def enrich_top(races, top=5):
                 k._FORM_CACHE[pid] = k.fetch_player_form(pid)
                 time.sleep(k.ENRICH_SLEEP)
             r["form"] = k._FORM_CACHE[pid]
+            r["rel"] = k._REL_CACHE.get(pid, {})
 
 
 # ---------------- 会場ごとのメッセージ ----------------
