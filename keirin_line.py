@@ -16,6 +16,9 @@ SLEEP = 1.5  # レース間の待ち時間(秒)
 ENRICH = os.environ.get("ENRICH", "1") != "0"        # 選手ページの成績も使う(0で無効)
 ENRICH_SLEEP = 1.0                                   # 選手ページ間の待ち時間(秒)
 ENRICH_BUDGET = int(os.environ.get("ENRICH_BUDGET", "420"))  # 選手ページ取得の制限時間(秒)
+LAYOUT = os.environ.get("LAYOUT", "ranking")         # ranking=ランキング形式 / venue=会場ごとにまとめる
+SPLIT = os.environ.get("SPLIT", "0") == "1"          # 1=会場ごとに別メッセージ(LINEの通数が増える)
+VENUES = [v.strip() for v in os.environ.get("VENUES", "").split(",") if v.strip()]  # 例: toyama,高知(空=全会場)
 
 
 def fetch(url, retries=2):
@@ -149,14 +152,14 @@ def parse_race(url):
 
 def fetch_all_today(limit=None):
     """今日の全レースを取得して返す。limitでテスト用に件数を絞れる"""
-    races = get_today_races()
+    races = [r for r in get_today_races() if venue_ok(r["venue"])]
     if limit:
         races = races[:limit]
     results = []
     for i, rc in enumerate(races):
         data = parse_race(rc["url"])
         if data:
-            data.update({"venue": rc["venue"], "race": rc["race"], "day": rc["day"]})
+            data.update({"venue": rc["venue"], "race": rc["race"], "day": rc["day"], "cup": rc["cup"]})
             results.append(data)
         print(f"{i+1}/{len(races)} {rc['venue']} {rc['race']}R "
               f"{'OK' if data and data['riders'] else 'NG'}")
@@ -277,6 +280,13 @@ VENUE_JP = {
     "matsuyama": "松山", "kokura": "小倉", "kurume": "久留米",
     "takeo": "武雄", "sasebo": "佐世保", "beppu": "別府", "kumamoto": "熊本",
 }
+
+
+def venue_ok(key):
+    """VENUESが空なら全会場。指定があれば、ローマ字(toyama)でも日本語(富山)でも可"""
+    if not VENUES:
+        return True
+    return key in VENUES or VENUE_JP.get(key, key) in VENUES
 
 
 def deadline_min(title):
@@ -459,6 +469,7 @@ def analyze(race):
     return {
         "venue": VENUE_JP.get(race["venue"], race["venue"]),
         "venue_key": race["venue"],
+        "cup": race.get("cup"), "day": race.get("day"),
         "race": race["race"],
         "deadline": deadline_min(race.get("title")),
         "honmei": honmei, "ara": ara,
@@ -574,9 +585,12 @@ def race_block(x, kind, idx, level=3):
         outlook, caution = x["ara_outlook"], x["ara_caution"]
         label, score = "荒れ度", x["ara"]
     by_car = x["by_car"]
-    out = ["━━━━━━━━━━",
-           f"【{idx}】{x['venue']}{x['race']}R ⏰{fmt_time(x['deadline'])}締切",
-           f"{label} {stars(score)}"]
+    if idx is None:      # 会場別表示: 会場名は見出しに出ているので省く
+        icon = "🎯" if kind == "honmei" else "🌪"
+        title = f"{icon}{x['race']}R ⏰{fmt_time(x['deadline'])}締切"
+    else:
+        title = f"【{idx}】{x['venue']}{x['race']}R ⏰{fmt_time(x['deadline'])}締切"
+    out = ["━━━━━━━━━━", title, f"{label} {stars(score)}"]
     if tags:
         out.append("📌" + "・".join(tags))
     if level >= 2:
@@ -611,16 +625,102 @@ def build_message(honmei, ara, level=3):
     return msg
 
 
+FOOTER = "※評価=得点+直近成績・3連対率・決まり手の補正。★は目安です。参考情報で、的中や回収を保証するものではありません。"
+
+
+def build_venue_messages(honmei, ara):
+    """会場ごとにまとめたメッセージ。SPLIT=1なら会場ごとに別メッセージ(最大5通)"""
+    jst = datetime.now(timezone(timedelta(hours=9)))
+    head = f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点"
+    groups = {}
+    for kind, xs in (("honmei", honmei), ("ara", ara)):
+        for x in xs:
+            groups.setdefault(x["venue"], []).append((kind, x))
+
+    def dl(x):
+        return x["deadline"] if x["deadline"] is not None else 9999
+
+    venues = sorted(groups, key=lambda v: min(dl(x) for _, x in groups[v]))
+
+    def venue_text(v, lv):
+        items = sorted(groups[v], key=lambda kx: (dl(kx[1]), kx[1]["race"]))
+        nh = sum(1 for k, _ in items if k == "honmei")
+        out = [f"📍【{v}】🎯本命{nh} 🌪荒れ{len(items) - nh}"]
+        for kind, x in items:
+            out.append(race_block(x, kind, None, lv))
+        return "\n".join(out)
+
+    def fit(fn):
+        lv = 3
+        t = fn(lv)
+        while len(t) > 4800 and lv > 0:
+            lv -= 1
+            t = fn(lv)
+        return t
+
+    if SPLIT:
+        texts = [fit(lambda lv, v=v: venue_text(v, lv)) for v in venues]
+        texts[0] = head + "\n\n" + texts[0]
+        texts[-1] = texts[-1] + "\n\n" + FOOTER
+        if len(texts) > 5:                       # LINEは1回に5通まで
+            texts = texts[:4] + ["\n\n".join(texts[4:])]
+        return texts
+    return [fit(lambda lv: head + "\n\n" + "\n\n".join(venue_text(v, lv) for v in venues)
+                + "\n\n" + FOOTER)]
+
+
+def build_messages(honmei, ara):
+    if LAYOUT == "venue":
+        return build_venue_messages(honmei, ara)
+    return [build_message(honmei, ara)]
+
+
+# ================= 記録(あとで的中を集計するため) =================
+def save_records(results, honmei, ara):
+    """配信した予想と、その日の全レースの評価を data/ に保存する(失敗しても配信には影響しない)"""
+    try:
+        jst = datetime.now(timezone(timedelta(hours=9)))
+        date, slot = jst.strftime("%Y%m%d"), jst.strftime("%H:%M")
+        os.makedirs("data/races", exist_ok=True)
+        p = f"data/races/{date}.json"
+        if not os.path.exists(p):          # その日の全レース(基準の集計用)。最初の配信で1回だけ
+            rows = []
+            for rc in results:
+                a = analyze(rc)
+                if a:
+                    rows.append({"venue_key": a["venue_key"], "cup": a["cup"], "day": a["day"],
+                                 "race": a["race"], "deadline": a["deadline"],
+                                 "honmei": round(a["honmei"], 2), "ara": round(a["ara"], 2)})
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(rows, f, ensure_ascii=False)
+        with open("data/picks.jsonl", "a", encoding="utf-8") as f:
+            for kind, xs in (("honmei", honmei), ("ara", ara)):
+                for x in xs:
+                    f.write(json.dumps({
+                        "date": date, "slot": slot, "kind": kind,
+                        "venue_key": x["venue_key"], "venue": x["venue"],
+                        "cup": x["cup"], "day": x["day"], "race": x["race"],
+                        "deadline": x["deadline"],
+                        "axis": x[kind + "_axis"], "partners": x[kind + "_partners"],
+                        "bet": x[kind + "_bet"], "score": round(x[kind], 2),
+                    }, ensure_ascii=False) + "\n")
+        print("記録を保存しました")
+    except Exception as e:
+        print("記録の保存に失敗(配信には影響なし):", e)
+
+
 # ================= LINE配信 =================
-def send_line(text):
+def send_line(texts):
+    if isinstance(texts, str):
+        texts = [texts]
     token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
     user_id = os.environ.get("LINE_USER_ID", "")
     if not token:
         print("LINE_CHANNEL_ACCESS_TOKEN が未設定のため、送信せず表示のみ")
-        print(text)
+        print("\n-----\n".join(texts))
         return
-    text = text[:4900]  # LINEの1通あたり上限対策
-    payload = {"messages": [{"type": "text", "text": text}]}
+    # LINEの1通は約5000文字まで、1回に5通まで
+    payload = {"messages": [{"type": "text", "text": t[:4900]} for t in texts[:5]]}
     if user_id:
         url = "https://api.line.me/v2/bot/message/push"
         payload["to"] = user_id
@@ -661,7 +761,8 @@ def main():
     if not honmei and not ara:
         print("対象レースがないため送信しません")
         return
-    send_line(build_message(honmei, ara))
+    send_line(build_messages(honmei, ara))
+    save_records(results, honmei, ara)
 
 
 if __name__ == "__main__":
