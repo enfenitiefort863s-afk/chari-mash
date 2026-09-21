@@ -121,20 +121,15 @@ def enrich_top(races, top=5):
 
 # ---------------- 会場ごとのメッセージ ----------------
 def venue_message(venue_jp, day, honmei, ara, level=3):
+    """1会場ぶんの配信文。おすすめレースの一覧 → レースごとの詳細"""
     jst = datetime.now(JST)
+    picks = k.sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点",
            f"📍{venue_jp}競輪" + (f" {day}日目" if day else ""), ""]
-    if honmei:
-        out.append(f"🎯【本命で決まりそう】{len(honmei)}レース")
-        for i, x in enumerate(honmei, 1):
-            out.append(k.race_block(x, "honmei", i, level))
-        out.append("")
-    if ara:
-        out.append(f"🌪【荒れそう】{len(ara)}レース")
-        for i, x in enumerate(ara, 1):
-            out.append(k.race_block(x, "ara", i, level))
-        out.append("")
-    out.append("※評価=得点+直近成績などの補正。参考情報で、的中や回収を保証するものではありません。")
+    out += k.pick_list(picks, False)
+    for kind, x in picks:
+        out.append(k.race_block(x, kind, None, level))
+    out += ["", k.FOOTER]
     msg = "\n".join(out)
     if k.line_len(msg) > k.LINE_LIMIT and level > 0:
         return venue_message(venue_jp, day, honmei, ara, level - 1)
@@ -149,14 +144,13 @@ def overflow_message(items):
     for v, day, h, a in items:
         name = h[0]["venue"] if h else a[0]["venue"]
         out += ["", f"【{name}競輪】"]
-        for kind, xs in (("honmei", h), ("ara", a)):
-            for x in xs:
-                icon = "🎯" if kind == "honmei" else "🌪"
-                axis = x["honmei_axis"] if kind == "honmei" else x["ara_axis"]
-                bet = x["honmei_bet"] if kind == "honmei" else x["ara_bet"]
-                who = (x["by_car"].get(axis) or {}).get("name", "")
-                out.append(f"{icon}{x['race']}R ⏰{k.fmt_time(x['deadline'])} ◎{k.circ(axis)}{who}")
-                out.append(f"　🎫 {bet}")
+        for kind, x in k.sort_picks(h, a):
+            icon = "🎯" if kind == "honmei" else "🌪"
+            axis = x[f"{kind}_axis"]
+            who = (x["by_car"].get(axis) or {}).get("name", "")
+            out.append(f"{icon}{x['race']}R ⏰{k.fmt_time(x['deadline'])} 軸{k.circ(axis)}{who}")
+            out.append(f"　3連単 {k.tri_text(x[kind + '_tri'])}")
+            out.append(f"　2車単 {k.circ(axis)}→{k.cs(x[kind + '_partners'])}")
     out += ["", "※参考情報です。的中や回収を保証するものではありません。"]
     return k.fit_text("\n".join(out))
 
