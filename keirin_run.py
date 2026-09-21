@@ -8,8 +8,10 @@ from datetime import datetime, timezone, timedelta
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
+import json
+
 import keirin_line as k
-from keirin_track import save_picks
+from keirin_track import save_picks, save_learn_rows
 
 JST = timezone(timedelta(hours=9))
 # 環境変数(GitHubのVariablesで設定。空のときは既定値)
@@ -56,7 +58,7 @@ def allowed_messages():
         return 1
     now = datetime.now(JST)
     days_left = calendar.monthrange(now.year, now.month)[1] - now.day + 1
-    deliveries_left = 3 * days_left          # 1日3回の配信
+    deliveries_left = 2 * days_left          # 1日2回の配信(朝8時・夜8時)
     reserve = 2 * days_left                  # 結果報告(1日最大2通)の分
     per = (rem - reserve) // deliveries_left
     print(f"今月の残り送信数 {rem}通 -> 1回あたり {per}通まで")
@@ -129,7 +131,7 @@ def venue_message(venue_jp, day, honmei, ara, level=3):
     out += k.pick_list(picks, False)
     for kind, x in picks:
         out.append(k.race_block(x, kind, None, level))
-    out += ["", k.FOOTER]
+    out += ["", "", k.footer()]
     msg = "\n".join(out)
     if k.line_len(msg) > k.LINE_LIMIT and level > 0:
         return venue_message(venue_jp, day, honmei, ara, level - 1)
@@ -153,6 +155,16 @@ def overflow_message(items):
             out.append(f"　2車単 {k.circ(axis)}→{k.cs(x[kind + '_partners'])}")
     out += ["", "※参考情報です。的中や回収を保証するものではありません。"]
     return k.fit_text("\n".join(out))
+
+
+def save_article(honmei, ara):
+    """今回の予想を、note用の記事として data/articles/ に保存する"""
+    from keirin_publish import build_article, save_article as _save
+    by_venue = {}
+    for kind, x in k.sort_picks(honmei, ara):
+        by_venue.setdefault(x["venue"], []).append((kind, x))
+    title, body = build_article(by_venue)
+    _save(title, body)
 
 
 def earliest_deadline(h, a):
@@ -228,6 +240,11 @@ def main():
 
     send_messages(texts)
     save_picks(honmei, ara, results)
+    try:
+        save_learn_rows(results)                 # 学習用: 全レースの特徴量
+        save_article(honmei, ara)                # note用: 今回の予想を記事の形にして保存
+    except Exception as e:                       # 配信は済んでいるので、保存の失敗では止めない
+        print("学習データ・記事の保存でエラー:", e)
 
 
 if __name__ == "__main__":
