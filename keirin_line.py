@@ -551,6 +551,46 @@ def pick_notes(notes, limit=3):
     return [n[2] for n in follow + local + jump]
 
 
+def line_strength(ln, by_car):
+    """ラインの強さ = 選手の評価点の平均 + 先頭の自力の実績"""
+    rs = [by_car[c] for c in ln if c in by_car]
+    if not rs:
+        return -1e9
+    head = by_car.get(ln[0])
+    return sum(r["rating"] for r in rs) / len(rs) + (0.3 * jiriki_wins(head) if head else 0)
+
+
+def flow_lines(lines, by_car, girls, riders, n_front, notes):
+    """展開予想を、短い文の並びにする"""
+    out = []
+    if girls:
+        fr = [r for r in riders if r.get("脚") == "逃"][:3]
+        if fr:
+            out.append("ライン無し。" + "・".join(f"{circ(r['車'])}{r['name']}" for r in fr) + "の仕掛け次第")
+        else:
+            out.append("ライン無し。個人の力量と位置取りで決まる")
+    else:
+        cand = [ln for ln in lines if any(c in by_car for c in ln)]
+        multi = [ln for ln in cand if len(ln) >= 2]          # 主導権は2人以上のラインから選ぶ
+        ranked = sorted(multi or cand, key=lambda ln: -line_strength(ln, by_car))
+        if ranked:
+            main = ranked[0]
+            h = by_car.get(main[0]) or {}
+            seg = "-".join(map(str, main))
+            if h.get("脚") == "逃":
+                out.append(f"主導権は{circ(main[0])}{h.get('name', '')}が握る見込み({seg})")
+            else:
+                out.append(f"{circ(main[0])}{h.get('name', '')}のライン({seg})が主力")
+            if len(ranked) >= 2 and len(ranked[1]) >= 2:
+                out.append("対抗は" + "-".join(map(str, ranked[1])) + "ライン")
+    if n_front >= 3:
+        out.append(f"先行型が{n_front}人で主導権争い、ペースは速め")
+    elif n_front == 0:
+        out.append("先行型が不在で、ペースは落ち着く見込み")
+    out += notes
+    return out
+
+
 def analyze(race):
     """1レースを分析して、本命度・荒れ度・買い目・評価コメントを返す"""
     riders = [r for r in race["riders"]
@@ -662,61 +702,35 @@ def analyze(race):
             ara_kind = "2位軸"
     ara_bet = f"{ara_axis}→{','.join(map(str, ara_partners))} (2車単 {ara_kind})"
 
-    # ---- 展開予想・注意点 ----
+    # ---- 展開予想 ----
     notes_txt = pick_notes(pos_notes)
-    honmei_outlook = []
-    if girls:
-        honmei_outlook.append("ガールズ: ラインが無く、個人の力量と作戦で決まる")
-    elif len(top_line) >= 2:
-        hk = (by_car.get(top_line[0]) or {}).get("脚", "")
-        seg = "-".join(map(str, top_line))
-        if hk == "逃":
-            honmei_outlook.append(
-                f"主力{seg}: 先頭{circ(top_line[0])}が逃げ、番手{circ(top_line[1])}が有利")
-        else:
-            honmei_outlook.append(
-                f"主力{seg}: 先頭{circ(top_line[0])}は{hk or '不明'}型、位置取り次第")
-    else:
-        honmei_outlook.append(f"評価1位{circ(top)}は単騎、展開頼み")
-    honmei_outlook.append(
-        f"評価 1位{circ(top)}{name_of(by_car, top)} {sc[0]:.1f}"
-        f" / 2位{circ(second)}{name_of(by_car, second)} 差{gap12:.1f}")
-    honmei_outlook += notes_txt
-    honmei_caution = []
-    if n_front >= 3:
-        honmei_caution.append(
-            f"先行型が{n_front}人で位置取りが激しくなりそう" if girls
-            else f"先行{n_front}人でペース乱れに注意")
-    if not girls and not same_line:
-        honmei_caution.append("評価2位が別ライン、頭を取られる恐れ")
-    if not girls and len(top_line) == 1:
-        honmei_caution.append("軸が単騎で展開に左右される")
-
-    ara_outlook = []
-    if girls:
-        ara_outlook.append("ガールズ: ラインが無く、仕掛けのタイミングと位置取りで決まる")
-    fr = [r for r in riders if r.get("脚") == "逃"][:3]
-    if fr:
-        ara_outlook.append("先行候補 " + "・".join(
-            f"{circ(r['車'])}{r['name']}" for r in fr))
-    if girls:
-        ara_outlook.append(f"上位5人の評価差{spread:.1f}")
-    else:
-        ara_outlook.append(f"上位5人の評価差{spread:.1f} / {n_lines}ライン(単騎{n_single})")
+    base_flow = flow_lines(lines, by_car, girls, riders, n_front, notes_txt)
+    honmei_flow = list(base_flow)
+    ara_flow = list(base_flow)
     if ara_kind == "番手狙い" and front_axis:
-        ara_outlook.append(
+        ara_flow.append(
             f"{circ(ara_axis)}{name_of(by_car, ara_axis)}が{circ(front_axis)}の番手から差し・マークで抜け出す形")
     elif ara_kind == "先行狙い" and front_axis:
-        ara_outlook.append(
-            f"{circ(front_axis)}{name_of(by_car, front_axis)}が単騎で先行して粘る形")
-    ara_outlook += [t for t in notes_txt
-                    if not (ara_kind == "番手狙い" and "差し・マーク" in t
-                            and f"番手{circ(ara_axis)}" in t)]   # 買い目の説明と重複するものは省く
-    ara_caution = []
-    if n_front >= 3:
-        ara_caution.append("先行が多く、ペース次第で結果が割れる")
-    if n_single >= 1:
-        ara_caution.append("単騎が展開をかき回す")
+        ara_flow.append(f"{circ(front_axis)}{name_of(by_car, front_axis)}が単騎で先行して粘る形")
+    if n_single >= 1 and not girls:
+        ara_flow.append("単騎が展開をかき回す可能性")
+
+    # ---- 3連単(軸→2着候補→3着候補のフォーメーション) ----
+    def make_tri(axis, prs):
+        others = [r["車"] for r in riders if r["車"] != axis and r["車"] not in prs]
+        c2 = list(prs[:2])
+        c3 = (list(prs) + others)[:4]
+        pts = sum(1 for b_ in c2 for c_ in c3 if c_ != b_)
+        return {"first": axis, "second": c2, "third": c3, "points": pts}
+
+    honmei_tri = make_tri(top, partners)
+    ara_tri = make_tri(ara_axis, ara_partners)
+
+    # ---- 総合評価 ----
+    honmei_verdict = ("堅い本命レース" if honmei >= 16
+                      else "本命サイドが有利" if honmei >= 8 else "やや本命寄り")
+    ara_verdict = ("波乱含み・高配当狙い" if ara >= 16
+                   else "荒れる可能性あり" if ara >= 10 else "やや荒れ模様")
 
     return {
         "venue": VENUE_JP.get(race["venue"], race["venue"]),
@@ -729,10 +743,12 @@ def analyze(race):
         "by_car": by_car, "lines": lines,
         "honmei_axis": top, "honmei_partners": partners,
         "honmei_bet": honmei_bet, "honmei_tags": honmei_tags,
-        "honmei_outlook": honmei_outlook, "honmei_caution": honmei_caution,
+        "honmei_flow": honmei_flow, "honmei_tri": honmei_tri,
+        "honmei_verdict": honmei_verdict,
         "ara_axis": ara_axis, "ara_partners": ara_partners,
         "ara_bet": ara_bet, "ara_tags": ara_tags,
-        "ara_outlook": ara_outlook, "ara_caution": ara_caution,
+        "ara_flow": ara_flow, "ara_tri": ara_tri,
+        "ara_verdict": ara_verdict,
     }
 
 
@@ -770,111 +786,90 @@ def stars(score):
     return "★" * n + "☆" * (5 - n)
 
 
-def stat_lines(r):
-    """勝率・3連対率・決まり手(逃/捲/差/マ)を、短い行にして返す"""
-    out = []
-    parts = []
-    if r.get("勝率"):
-        parts.append(f"勝率{r['勝率']}%")
-    if r.get("3連対率"):
-        parts.append(f"3連対{r['3連対率']}%")
-    if parts:
-        out.append("　📊" + " ".join(parts))
-    kim = "".join(f"{k}{r[k]}" for k in ("逃", "捲", "差", "マ")
-                  if r.get(k) not in (None, ""))
-    if kim:
-        out.append("　　決まり手 " + kim)
-    return out
+def cs(cars):
+    """車番を丸数字でつなぐ(例: ④①⑤)"""
+    return "".join(circ(c) for c in cars)
 
 
-def form_lines(r):
-    f = r.get("form")
-    if not f or f["n"] < 3:
-        return []
-    mood = "(上り調子)" if f["trend"] >= 1.0 else ("(下り調子)" if f["trend"] <= -1.0 else "")
-    out = [f"　📈直近{f['n']}走 平均{f['avg']:.1f}着 3着内{f['top3'] * 100:.0f}%{mood}"]
-    extra = []
-    if f["acc"]:
-        extra.append(f"事故{f['acc']}")
-    if f["kim"]:
-        extra.append("連対時 " + "".join(f"{k}{v}" for k, v in f["kim"].items()))
-    if extra:
-        out.append("　　" + " ".join(extra))
-    return out
+def tri_text(t):
+    return f"{circ(t['first'])}→{cs(t['second'])}→{cs(t['third'])} ({t['points']}点)"
 
 
-def rider_text(by_car, car, role, level, is_axis):
-    r = by_car.get(car)
+def axis_lines(r, car, level):
+    """軸選手の表示。名前・脚質・評価点・コメント・直近成績"""
     if not r:
-        return f"{role} {circ(car)}"
+        return [f"◎{circ(car)}"]
     kyaku = r.get("脚", "")
-    out = [f"{role} {circ(car)} {r['name']}" + (f"({kyaku})" if kyaku else "")]
+    head = f"◎{circ(car)} {r['name']}" + (f"({kyaku})" if kyaku else "") + f" 評価{r['rating']:.1f}"
     pb = r.get("pos_bonus") or 0
-    sc = f"　得点{r['score']:.1f} → 評価{r['rating']:.1f}"
     if abs(pb) >= 0.3:
-        sc += f"(並び{pb:+.1f}込み)"
-    out.append(sc)
+        head += f"(並び{pb:+.1f}込み)"
+    out = [head]
     cm = (r.get("コメント") or "").strip()
-    if cm and (is_axis or level >= 1):
+    if cm:
         out.append(f"　💬{cm}")
-    if (is_axis and level >= 2) or level >= 3:
-        out += stat_lines(r)
-        out += form_lines(r)
-    return "\n".join(out)
+    f = r.get("form")
+    if level >= 2 and f and f["n"] >= 3:
+        mood = "(上り調子)" if f["trend"] >= 1.0 else ("(下り調子)" if f["trend"] <= -1.0 else "")
+        out.append(f"　📈直近{f['n']}走 平均{f['avg']:.1f}着 3着内{f['top3'] * 100:.0f}%{mood}")
+        if f["acc"]:
+            out.append(f"　⚠直近に事故{f['acc']}回")
+    return out
 
 
 def race_block(x, kind, idx, level=3):
+    """1レースぶん。idxがNoneのときは会場名を省く(会場別の配信用)"""
     if kind == "honmei":
-        axis, partners = x["honmei_axis"], x["honmei_partners"]
-        tags, bet = x["honmei_tags"], x["honmei_bet"]
-        outlook, caution = x["honmei_outlook"], x["honmei_caution"]
-        label, score = "本命度", x["honmei"]
+        axis, partners, flow, tri = x["honmei_axis"], x["honmei_partners"], x["honmei_flow"], x["honmei_tri"]
+        tags, verdict, score, icon = x["honmei_tags"], x["honmei_verdict"], x["honmei"], "🎯"
     else:
-        axis, partners = x["ara_axis"], x["ara_partners"]
-        tags, bet = x["ara_tags"], x["ara_bet"]
-        outlook, caution = x["ara_outlook"], x["ara_caution"]
-        label, score = "荒れ度", x["ara"]
-    by_car = x["by_car"]
-    icon = "🎯" if kind == "honmei" else "🌪"
-    if idx is None:      # 会場別表示: 会場名は見出しに出ているので省く
-        title = f"{icon}{x['race']}R ⏰{fmt_time(x['deadline'])}締切"
-    else:
-        title = f"{icon}【{idx}】{x['venue']}{x['race']}R ⏰{fmt_time(x['deadline'])}締切"
-    b1 = bet.split(" (")[0]
-    b2 = bet[len(b1):].strip().strip("()")
+        axis, partners, flow, tri = x["ara_axis"], x["ara_partners"], x["ara_flow"], x["ara_tri"]
+        tags, verdict, score, icon = x["ara_tags"], x["ara_verdict"], x["ara"], "🌪"
+    place = f"{x['venue']}" if idx is not None else ""
+    n_flow = {3: 4, 2: 3, 1: 2}.get(level, 1)
+    reason = "・".join(tags[:3])
 
-    # 先頭の空行で、前のレースとの間を空ける。結論(買い目)を先に、理由・選手・並びを後ろに
-    out = ["", "━━━━━━━━━━", title, f"{label} {stars(score)}",
-           "", f"🎫 買い目 {b1}", f"　({b2})"]
-    reasons = []
-    if tags:
-        reasons.append("・" + " / ".join(tags))
-    if level >= 2:
-        reasons += ["・" + t for t in outlook]
-    if reasons:
-        out += ["", "📝理由"] + reasons
-    out += ["", "👤選手", rider_text(by_car, axis, "◎軸", level, True)]
-    for c in partners:
-        out += ["", rider_text(by_car, c, "○相手", level, False)]
-    if x["lines"]:
+    # 先頭の空行で、前のレースとの間を空ける
+    out = ["", "━━━━━━━━━━", f"{icon} {place}{x['race']}R ⏰{fmt_time(x['deadline'])}締切",
+           "", "📈展開予想"]
+    out += ["・" + t for t in flow[:n_flow]]
+    out += ["", "👤軸選手"] + axis_lines(x["by_car"].get(axis), axis, level)
+    out += ["", "🎫3連単予想", "　" + tri_text(tri)]
+    out += ["", "🎫2車単予想", f"　{circ(axis)}→{cs(partners)}"]
+    out += ["", f"⭐総合評価 {stars(score)}", f"　{verdict}" + (f"({reason})" if reason else "")]
+    if x["lines"] and level >= 1:
         out += ["", "🧭並び " + " ｜ ".join("-".join(map(str, ln)) for ln in x["lines"])]
-    if level >= 2 and caution:
-        out.append("⚠" + " / ".join(caution))
     return "\n".join(out)
 
 
+FOOTER = "🎯=本命サイド 🌪=荒れ狙い / 評価=得点+直近成績などの補正\n※参考情報です。的中や回収を保証するものではありません。"
+
+
+def pick_list(picks, show_venue):
+    """『おすすめレース』の一覧(締切順)"""
+    out = ["🏁おすすめレース"]
+    for kind, x in picks:
+        icon = "🎯" if kind == "honmei" else "🌪"
+        score = x["honmei"] if kind == "honmei" else x["ara"]
+        place = x["venue"] if show_venue else ""
+        out.append(f"{icon}{place}{x['race']}R ⏰{fmt_time(x['deadline'])} {stars(score)}")
+    return out
+
+
+def sort_picks(honmei, ara):
+    picks = [("honmei", x) for x in honmei] + [("ara", x) for x in ara]
+    return sorted(picks, key=lambda t: (t[1]["deadline"] if t[1]["deadline"] is not None else 9999, t[1]["race"]))
+
+
 def build_message(honmei, ara, level=3):
+    """全会場を1通にまとめる形"""
     jst = datetime.now(timezone(timedelta(hours=9)))
+    picks = sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
-    out.append(f"🎯【本命で決まりそう】{len(honmei)}レース")
-    for i, x in enumerate(honmei, 1):
-        out.append(race_block(x, "honmei", i, level))
-    out.append("")
-    out.append(f"🌪【荒れそう】{len(ara)}レース")
-    for i, x in enumerate(ara, 1):
-        out.append(race_block(x, "ara", i, level))
-    out.append("")
-    out.append("※評価=得点+直近成績・3連対率・決まり手・並びの補正。★は目安です。参考情報で、的中や回収を保証するものではありません。")
+    out += pick_list(picks, True)
+    for kind, x in picks:
+        out.append(race_block(x, kind, 1, level))
+    out += ["", FOOTER]
     msg = "\n".join(out)
     if line_len(msg) > LINE_LIMIT and level > 0:
         return build_message(honmei, ara, level - 1)  # 長すぎる場合は詳細を減らす
