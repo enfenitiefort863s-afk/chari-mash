@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timezone, timedelta
 
 import requests
+from concurrent.futures import ThreadPoolExecutor
 
 import keirin_line as k
 from keirin_track import save_picks
@@ -75,7 +76,7 @@ def send_messages(texts):
         return
     url = f"{LINE_API}/push" if user_id else f"{LINE_API}/broadcast"
     for i in range(0, len(texts), 5):        # 1回のAPI呼び出しは最大5通
-        payload = {"messages": [{"type": "text", "text": t[:4900]} for t in texts[i:i + 5]]}
+        payload = {"messages": [{"type": "text", "text": k.fit_text(t)} for t in texts[i:i + 5]]}
         if user_id:
             payload["to"] = user_id
         r = requests.post(url, headers={**_auth(), "Content-Type": "application/json"},
@@ -86,23 +87,34 @@ def send_messages(texts):
 
 # ---------------- 選手ページの取得(上位選手だけ) ----------------
 def enrich_top(races, top=5):
-    """候補レースの、評価上位の選手だけ直近成績を取る(時間の制限あり)"""
-    start = time.time()
+    """候補レースの、評価上位の選手(と単騎の選手)だけ、選手ページを並行して取る(時間の制限あり)"""
+    sel, need = [], []
     for rc in races:
         rs = [r for r in rc["riders"] if r.get("score") is not None and r.get("pid")]
         for r in rs:
             k.rider_rating(r)
         rs.sort(key=lambda r: -r["rating"])
         singles = {ln[0] for ln in (rc.get("lines") or []) if len(ln) == 1}   # 飛びつきの判断に必要
-        targets = rs[:top] + [r for r in rs[top:] if r["車"] in singles]
-        for r in targets:
-            pid = r["pid"]
-            if pid not in k._FORM_CACHE:
-                if time.time() - start > k.ENRICH_BUDGET:
-                    print("選手ページの取得が制限時間に達したため、残りは基本データで続行")
-                    return
-                k._FORM_CACHE[pid] = k.fetch_player_form(pid)
-                time.sleep(k.ENRICH_SLEEP)
+        for r in rs[:top] + [x for x in rs[top:] if x["車"] in singles]:
+            sel.append(r)
+            if r["pid"] not in k._FORM_CACHE and r["pid"] not in need:
+                need.append(r["pid"])
+    print(f"選手ページ {len(need)}人を取得します(同時 {k.WORKERS})")
+    start = time.time()
+
+    def work(pid):
+        if time.time() - start > k.ENRICH_BUDGET:
+            return
+        k._FORM_CACHE[pid] = k.fetch_player_form(pid)
+        time.sleep(k.FETCH_DELAY)
+
+    with ThreadPoolExecutor(max_workers=k.WORKERS) as ex:
+        list(ex.map(work, need))
+    if time.time() - start > k.ENRICH_BUDGET:
+        print("選手ページの取得が制限時間に達したため、一部は基本データで続行")
+    for r in sel:
+        pid = r["pid"]
+        if pid in k._FORM_CACHE:
             r["form"] = k._FORM_CACHE[pid]
             r["rel"] = k._REL_CACHE.get(pid, {})
 
@@ -124,9 +136,29 @@ def venue_message(venue_jp, day, honmei, ara, level=3):
         out.append("")
     out.append("※評価=得点+直近成績などの補正。参考情報で、的中や回収を保証するものではありません。")
     msg = "\n".join(out)
-    if len(msg) > 4900 and level > 0:
+    if k.line_len(msg) > k.LINE_LIMIT and level > 0:
         return venue_message(venue_jp, day, honmei, ara, level - 1)
     return msg
+
+
+def overflow_message(items):
+    """入りきらない会場を、1通にコンパクトにまとめる(レースごとに買い目だけ)"""
+    jst = datetime.now(JST)
+    out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点",
+           "📍その他の会場(買い目のみ)"]
+    for v, day, h, a in items:
+        name = h[0]["venue"] if h else a[0]["venue"]
+        out += ["", f"【{name}競輪】"]
+        for kind, xs in (("honmei", h), ("ara", a)):
+            for x in xs:
+                icon = "🎯" if kind == "honmei" else "🌪"
+                axis = x["honmei_axis"] if kind == "honmei" else x["ara_axis"]
+                bet = x["honmei_bet"] if kind == "honmei" else x["ara_bet"]
+                who = (x["by_car"].get(axis) or {}).get("name", "")
+                out.append(f"{icon}{x['race']}R ⏰{k.fmt_time(x['deadline'])} ◎{k.circ(axis)}{who}")
+                out.append(f"　🎫 {bet}")
+    out += ["", "※参考情報です。的中や回収を保証するものではありません。"]
+    return k.fit_text("\n".join(out))
 
 
 def earliest_deadline(h, a):
@@ -189,9 +221,8 @@ def main():
         for v, day, h, a in venue_picks:
             name = h[0]["venue"] if h else a[0]["venue"]
             texts.append(venue_message(name, day, h, a))
-        if len(texts) > allowed:                 # 通数が足りないときは、残りを最後の1通にまとめる
-            rest = "\n\n".join(texts[allowed - 1:])
-            texts = texts[:allowed - 1] + [rest[:4900]]
+        if len(texts) > allowed:                 # 通数が足りないときは、残りの会場を最後の1通にまとめる
+            texts = texts[:allowed - 1] + [overflow_message(venue_picks[allowed - 1:])]
         honmei = [x for _, _, h, _ in venue_picks for x in h]
         ara = [x for _, _, _, a in venue_picks for x in a]
     else:
