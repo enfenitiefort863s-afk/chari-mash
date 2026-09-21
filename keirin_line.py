@@ -3,27 +3,41 @@
 import json
 import os
 import re
+import threading
 import time
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import requests
 from bs4 import BeautifulSoup, NavigableString
-from collections import Counter
 
 BASE = "https://www.winticket.jp"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
-SLEEP = 1.5  # レース間の待ち時間(秒)
+WORKERS = int(os.environ.get("WORKERS") or 4)       # 同時に取得するページ数(1にすると1ページずつ)
+FETCH_DELAY = 0.3                                   # 1つの取得ごとの待ち時間(秒)
+LINE_LIMIT = 4500                                   # LINEの1通あたりの上限(UTF-16の文字数。絵文字は2文字分)
 ENRICH = os.environ.get("ENRICH", "1") != "0"        # 選手ページの成績も使う(0で無効)
-ENRICH_SLEEP = 1.0                                   # 選手ページ間の待ち時間(秒)
 ENRICH_BUDGET = int(os.environ.get("ENRICH_BUDGET", "420"))  # 選手ページ取得の制限時間(秒)
 VENUES = [v.strip() for v in os.environ.get("VENUES", "").split(",") if v.strip()]  # 例: toyama,高知(空=全会場)
+
+
+_tls = threading.local()
+
+
+def _session():
+    s = getattr(_tls, "s", None)
+    if s is None:
+        s = requests.Session()
+        s.headers.update(HEADERS)
+        _tls.s = s
+    return s
 
 
 def fetch(url, retries=2):
     """HTMLを取得。失敗したら少し待って再試行"""
     for i in range(retries + 1):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=20)
+            r = _session().get(url, timeout=20)
             if r.status_code == 200:
                 return r.text
             print(f"  status {r.status_code}: {url}")
@@ -31,6 +45,27 @@ def fetch(url, retries=2):
             print(f"  error {e}: {url}")
         time.sleep(2)
     return None
+
+
+def line_len(text):
+    """LINEが数える文字数(UTF-16。絵文字は2文字分)"""
+    return len(text.encode("utf-16-le")) // 2
+
+
+def fit_text(text, limit=LINE_LIMIT):
+    """上限を超えるときは、行の区切りで後ろを省く"""
+    if line_len(text) <= limit:
+        return text
+    note = "\n…(文字数の上限で省略)"
+    lines = text.split("\n")
+    while lines and line_len("\n".join(lines) + note) > limit:
+        lines.pop()
+    if not lines:                       # 改行が無いまま長い場合は、文字で切る
+        t = text
+        while t and line_len(t + note) > limit:
+            t = t[:-50]
+        return t + note
+    return "\n".join(lines) + note
 
 
 def clean(s):
@@ -148,20 +183,51 @@ def parse_race(url):
     }
 
 
-def fetch_all_today(limit=None):
-    """今日の全レースを取得して返す。limitでテスト用に件数を絞れる"""
+def is_upcoming(deadline, now=None):
+    """締切(0時からの分)がまだ先か。取れなかったときは先とみなす"""
+    if deadline is None:
+        return True
+    now = now_min_jst() if now is None else now
+    d = deadline
+    if now >= 18 * 60 and d < 6 * 60:
+        d += 24 * 60          # 夜の配信では、深夜(0〜6時)のレースは翌日扱い
+    return d > now
+
+
+def fetch_all_today(limit=None, only_upcoming=True):
+    """今日の全レースを取得して返す。
+    会場ごとに並行して取得し、各会場は後ろのレースから順に見て、
+    締切済みのレースに当たったらそこで止める(それより前も締切済みのため)"""
     races = [r for r in get_today_races() if venue_ok(r["venue"])]
     if limit:
         races = races[:limit]
+    by_venue = {}
+    for r in races:
+        by_venue.setdefault(r["venue"], []).append(r)
+    now = now_min_jst()
+    counter = {"n": 0}
+
+    def work(rcs):
+        out = []
+        for rc in sorted(rcs, key=lambda x: -x["race"]):
+            data = parse_race(rc["url"])
+            counter["n"] += 1
+            if data:
+                dl = deadline_min(data["title"])
+                if only_upcoming and not is_upcoming(dl, now):
+                    break                       # これより前のレースは締切済み
+                data.update({"venue": rc["venue"], "race": rc["race"],
+                             "day": rc["day"], "cup": rc["cup"]})
+                out.append(data)
+            time.sleep(FETCH_DELAY)
+        return out
+
     results = []
-    for i, rc in enumerate(races):
-        data = parse_race(rc["url"])
-        if data:
-            data.update({"venue": rc["venue"], "race": rc["race"], "day": rc["day"], "cup": rc["cup"]})
-            results.append(data)
-        print(f"{i+1}/{len(races)} {rc['venue']} {rc['race']}R "
-              f"{'OK' if data and data['riders'] else 'NG'}")
-        time.sleep(SLEEP)
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        for out in ex.map(work, list(by_venue.values())):
+            results += out
+    results.sort(key=lambda x: (x["venue"], x["race"]))
+    print(f"レースページ {counter['n']}/{len(races)}件を取得、対象 {len(results)}レース")
     return results
 
 # ================= 選手ページ(直近成績) =================
@@ -268,29 +334,6 @@ def fetch_player_form(pid):
 
 _FORM_CACHE = {}
 _REL_CACHE = {}
-
-
-def enrich_riders(races):
-    """候補レースの全選手について、直近成績を取得して r['form'] に入れる"""
-    start = time.time()
-    total = sum(1 for rc in races for r in rc["riders"] if r.get("pid"))
-    done = 0
-    for rc in races:
-        for r in rc["riders"]:
-            pid = r.get("pid")
-            if not pid:
-                continue
-            if pid not in _FORM_CACHE:
-                if time.time() - start > ENRICH_BUDGET:
-                    print("選手ページの取得が制限時間に達したため、残りは基本データで続行")
-                    return
-                _FORM_CACHE[pid] = fetch_player_form(pid)
-                time.sleep(ENRICH_SLEEP)
-                done += 1
-                if done % 10 == 0:
-                    print(f"選手ページ {done}/{total}")
-            r["form"] = _FORM_CACHE[pid]
-            r["rel"] = _REL_CACHE.get(pid, {})
 
 
 # ================= 分析 =================
@@ -700,12 +743,8 @@ def pick(results, only_upcoming=True, n=5):
         a = analyze(rc)
         if not a:
             continue
-        if only_upcoming and a["deadline"] is not None:
-            d = a["deadline"]
-            if now >= 18 * 60 and d < 6 * 60:
-                d += 24 * 60  # 夜の配信では、深夜(0〜6時)のレースは翌日扱い
-            if d <= now:
-                continue  # 締切済みは除外
+        if only_upcoming and not is_upcoming(a["deadline"], now):
+            continue  # 締切済みは除外
         rows.append(a)
     honmei = sorted(rows, key=lambda x: -x["honmei"])[:n]
     used = {(x["venue"], x["race"]) for x in honmei}
@@ -837,7 +876,7 @@ def build_message(honmei, ara, level=3):
     out.append("")
     out.append("※評価=得点+直近成績・3連対率・決まり手・並びの補正。★は目安です。参考情報で、的中や回収を保証するものではありません。")
     msg = "\n".join(out)
-    if len(msg) > 4900 and level > 0:
+    if line_len(msg) > LINE_LIMIT and level > 0:
         return build_message(honmei, ara, level - 1)  # 長すぎる場合は詳細を減らす
     return msg
 
@@ -853,7 +892,7 @@ def send_line(texts):
         print("\n-----\n".join(texts))
         return
     # LINEの1通は約5000文字まで、1回に5通まで
-    payload = {"messages": [{"type": "text", "text": t[:4900]} for t in texts[:5]]}
+    payload = {"messages": [{"type": "text", "text": fit_text(t)} for t in texts[:5]]}
     if user_id:
         url = "https://api.line.me/v2/bot/message/push"
         payload["to"] = user_id
@@ -867,35 +906,3 @@ def send_line(texts):
     )
     print("LINE:", r.status_code, r.text[:200])
     r.raise_for_status()
-
-
-def main():
-    results = fetch_all_today()
-    print(f"取得レース数: {len(results)}")
-    if not results:
-        print("レースを取得できなかったため送信しません")
-        return
-
-    pool = results
-    if ENRICH:
-        # 1段目: 基本データで候補を絞る(本命8+荒れ8)
-        cand_h, cand_a = pick(results, only_upcoming=True, n=8)
-        keys = {(x["venue_key"], x["race"]) for x in cand_h + cand_a}
-        cand = [rc for rc in results if (rc["venue"], rc["race"]) in keys]
-        print(f"候補 {len(cand)}レースの選手ページを取得します")
-        try:
-            enrich_riders(cand)
-            pool = cand
-        except Exception as e:
-            print("選手ページの取得でエラー。基本データだけで続行:", e)
-
-    # 2段目: 直近成績も入れた評価で、最終の5+5を決める
-    honmei, ara = pick(pool, only_upcoming=True)
-    if not honmei and not ara:
-        print("対象レースがないため送信しません")
-        return
-    send_line(build_message(honmei, ara))
-
-
-if __name__ == "__main__":
-    main()
