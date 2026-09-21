@@ -392,31 +392,63 @@ def now_min_jst():
     return n.hour * 60 + n.minute
 
 
-def rider_rating(r):
-    """評価点 = 競走得点 + 補正(3連対率・決まり手・直近成績)。重みは仮"""
-    adj = 0.0
-    t3 = to_float(r.get("3連対率"))
-    if t3 is not None:
-        adj += max(-2.0, min(2.0, (t3 - 40) * 0.05))
+# 評価点 = 競走得点 + Σ(重み × 特徴量)。重みの初期値(点数換算)。
+# data/model.json があれば、過去の結果から学習した重みに置き換わる(keirin_learn.py)
+PRIOR_WEIGHTS = {"t3": 1.0, "jiriki": 2.0, "mark": 1.5,
+                 "pos_follow": 2.5, "pos_local": 1.0, "jump": 1.5}
+LEARN_KEYS = list(PRIOR_WEIGHTS)
+MODEL_PATH = os.environ.get("MODEL_PATH") or "data/model.json"
+MIN_MODEL_RACES = 150          # 学習結果を使うのに必要なレース数
 
+
+def load_weights(path=None):
+    """(男子の重み, ガールズの重み, 学習に使ったレース数)。学習結果が無い/少ないときは初期値"""
+    men, girls, n = dict(PRIOR_WEIGHTS), dict(PRIOR_WEIGHTS), 0
+    try:
+        with open(path or MODEL_PATH, encoding="utf-8") as f:
+            m = json.load(f)
+        if int(m.get("n_races", 0)) >= MIN_MODEL_RACES:
+            n = int(m["n_races"])
+            men.update({k: float(v) for k, v in (m.get("men") or {}).items() if k in men})
+            girls.update({k: float(v) for k, v in (m.get("girls") or {}).items() if k in girls})
+    except Exception:
+        pass
+    return men, girls, n
+
+
+WEIGHTS, WEIGHTS_GIRLS, MODEL_RACES = load_weights()
+
+
+def rider_feats(r):
+    """選手ごとの特徴量。3連対率・自力(逃/捲)・差し/マークの実績"""
     def k(key):
         return to_int(r.get(key)) or 0
 
-    jiriki = min(2.0, (k("逃") + k("捲")) * 0.3)    # 自力(逃げ・捲り)で勝てているか
-    mark = min(1.5, (k("差") + k("マ")) * 0.15)     # 差し・マークで勝てているか
-    kyaku = r.get("脚")
-    if kyaku == "逃":
-        adj += jiriki
-    elif kyaku == "追":
-        adj += mark
+    t3 = to_float(r.get("3連対率"))
+    jf = min(1.0, (k("逃") + k("捲")) / 6.67)
+    mf = min(1.0, (k("差") + k("マ")) / 10.0)
+    style = r.get("脚")
+    if style == "逃":
+        j, m = jf, 0.0
+    elif style == "追":
+        j, m = 0.0, mf
     else:
-        adj += max(jiriki, mark)
-    f = r.get("form")
-    if f and f["n"] >= 5:
-        adj += max(-1.5, min(1.5, (5.0 - f["avg"]) * 0.4))      # 直近の平均着順
-        if f["n"] >= 8:
-            adj += max(-0.7, min(0.7, f["trend"] * 0.2))          # 上り調子か下り調子か
-        adj -= min(1.0, 0.5 * f["acc"])                           # 落車・失格など
+        j, m = 0.6 * jf, 0.6 * mf
+    return {"t3": max(-2.0, min(2.0, (t3 - 40) / 20)) if t3 is not None else 0.0,
+            "jiriki": j, "mark": m}
+
+
+def rider_rating(r, girls=False):
+    """評価点 = 競走得点 + 重み×特徴量 + 直近成績の補正(重みは仮。学習で更新)"""
+    w = WEIGHTS_GIRLS if girls else WEIGHTS
+    f = rider_feats(r)
+    adj = sum(w[key] * v for key, v in f.items())
+    fm = r.get("form")
+    if fm and fm["n"] >= 5:
+        adj += max(-1.5, min(1.5, (5.0 - fm["avg"]) * 0.4))      # 直近の平均着順
+        if fm["n"] >= 8:
+            adj += max(-0.7, min(0.7, fm["trend"] * 0.2))          # 上り調子か下り調子か
+        adj -= min(1.0, 0.5 * fm["acc"])                           # 落車・失格など
     r["rating"] = r["score"] + adj
     return r["rating"]
 
@@ -444,25 +476,12 @@ def follow_wins(r):
 REL_WEIGHT = {"師匠": 0.6, "弟子": 0.6, "縁故選手": 0.6, "練習仲間": 0.4}   # 関係の強さ(仮)
 
 
-def comment_targets(r, by_car):
-    """前検コメントの『○○君』『○○さん』から、追走する相手の車番を返す。1人に特定できたものだけ"""
-    cm = r.get("コメント") or ""
-    found = set()
-    for tok in re.findall(r"([^\s、。,，・0-9０-９]{2,4}?)(?:君|さん)", cm):
-        ms = [c for c, o in by_car.items()
-              if c != r["車"] and str(o.get("name", "")).startswith(tok)]
-        if len(ms) == 1:
-            found.add(ms[0])
-    return found
-
-
-def jump_bonus(lines, by_car):
-    """単騎の選手の飛びつき(別ラインの選手に付く動き)を、根拠があるときだけ加点する。
-    根拠 = 前検コメントで相手の名前を挙げている / 縁故・師弟・練習仲間の関係。
-    「自力」と言っている選手は加点しない。飛びつきの成功率そのものは、公開データに無い"""
+def jump_features(lines, by_car):
+    """単騎の選手が、縁故・師弟・練習仲間の関係にある別ラインの選手に飛びつく可能性(0〜1)。
+    関係が無い選手は見ない。飛びつきの成功率そのものは、公開データに無い"""
     pid_to_car = {r.get("pid"): c for c, r in by_car.items() if r.get("pid")}
     line_of = {c: i for i, ln in enumerate(lines) for c in ln}
-    bonus, notes = {}, []
+    out, notes = {}, []
     for ln in lines:
         if len(ln) != 1:
             continue
@@ -470,42 +489,28 @@ def jump_bonus(lines, by_car):
         r = by_car.get(car)
         if not r:
             continue
-        cm = r.get("コメント") or ""
-        tgts = [t for t in comment_targets(r, by_car) if line_of.get(t) != line_of.get(car)]
-        ev, why = 0.0, ""
-        if tgts:
-            t = tgts[0]
-            tr = by_car.get(t) or {}
-            ev = 0.8 + (0.4 if (tr.get("脚") == "逃" or jiriki_wins(tr) >= 3) else 0.0)
-            why = f"コメントで{circ(t)}を追走の構え"
-        rel_hit = None                      # (強さ, 相手の車番, 関係)
+        best = None                      # (関係の強さ, 相手の車番, 関係)
         for typ, ids in (r.get("rel") or {}).items():
             w = REL_WEIGHT.get(typ)
             for pid in ids:
                 t = pid_to_car.get(pid)
-                if w and t and line_of.get(t) != line_of.get(car) and (rel_hit is None or w > rel_hit[0]):
-                    rel_hit = (w, t, typ)
-        if rel_hit:
-            w, t, typ = rel_hit
-            if tgts and t == tgts[0]:
-                ev += 0.3
-                why = f"コメントと{typ}の関係から{circ(t)}に付く可能性"
-            elif not tgts:
-                ev, why = w, f"{circ(t)}と{typ}の関係(飛びつき期待)"
-        if "自力" in cm and not tgts:       # 自力宣言 → 飛びつきは見込まない
-            ev = 0.0
-        if ev > 0:
-            scale = 0.7 + min(0.6, 0.1 * follow_wins(r))   # 差し・マークの実績が多いほど確からしい
-            b = min(1.5, ev * scale)
-            bonus[car] = b
-            notes.append(("jump", b, f"単騎{circ(car)}: {why}"))
-    return bonus, notes
+                if w and t and line_of.get(t) != line_of.get(car) and (best is None or w > best[0]):
+                    best = (w, t, typ)
+        if best:
+            w, t, typ = best
+            tr = by_car.get(t) or {}
+            strength = w + (0.3 if (tr.get("脚") == "逃" or jiriki_wins(tr) >= 3) else 0.0)
+            scale = 0.7 + min(0.6, 0.1 * follow_wins(r))     # 差し・マークの実績が多いほど確からしい
+            f = min(1.0, strength * scale / 1.5)
+            out[car] = f
+            notes.append(("jump", f * 1.5, f"単騎{circ(car)}: {circ(t)}と{typ}の関係(飛びつき期待)"))
+    return out, notes
 
 
-def position_bonus(lines, by_car, local_pref):
-    """ラインの並び(先頭・番手・3番手)による加点。決まり手の回数などのデータで決める。
-    戻り値: ({車番: 加点}, [(種類, 重み, 説明), ...])。重みは仮の値"""
-    bonus, notes = {}, []
+def position_feats(lines, by_car, local_pref):
+    """ラインの並び(先頭・番手・3番手)から、位置ごとの特徴量と展開メモを作る。
+    戻り値: ({車番: {特徴量名: 値}}, [(種類, 重み, 説明), ...])"""
+    feats, notes = {}, []
     for ln in lines:
         head = by_car.get(ln[0]) if ln else None
         if not head or len(ln) < 2:
@@ -516,29 +521,32 @@ def position_bonus(lines, by_car, local_pref):
             r = by_car.get(car)
             if not r:
                 continue
-            b = 0.0
+            f = feats.setdefault(car, {})
             if head_front:
                 # 先行選手の番手は、差し・マークで決まりやすい。
-                # 先頭の自力の実績と、本人の差し・マークの実績が多いほど加点
-                b = min(1.5, 0.25 * head_power) + min(1.0, 0.15 * follow_wins(r))
+                # 先頭の自力の実績と、本人の差し・マークの実績が多いほど大きい
+                raw = min(1.5, 0.25 * head_power) + min(1.0, 0.15 * follow_wins(r))
                 if pos == 3:
-                    b *= 0.5
-                if b >= 0.8:
+                    raw *= 0.5
+                f["pos_follow"] = raw / 2.5
+                if raw >= 0.8:
                     role = "番手" if pos == 2 else "3番手"
-                    notes.append(("follow", b, f"先行{circ(ln[0])}の{role}{circ(car)}に差し・マーク期待"))
+                    notes.append(("follow", raw, f"先行{circ(ln[0])}の{role}{circ(car)}に差し・マーク期待"))
             # 地元選手が、地元以外の先頭の後ろ(番手・3番手)にいる → 番手捲り・自力の可能性
             if local_pref and r.get("pref") == local_pref and head.get("pref") != local_pref:
                 lb = 1.0 if pos == 2 else 0.6
-                b += lb
+                f["pos_local"] = lb
                 notes.append(("local", lb, f"地元{circ(car)}が{'番手' if pos == 2 else '3番手'}(番手捲りも)"))
-            if b:
-                bonus[car] = bonus.get(car, 0.0) + b
-    # 単騎の選手の飛びつき(コメントと縁故・師弟関係が根拠のときだけ)
-    jb, jn = jump_bonus(lines, by_car)
-    for c, v in jb.items():
-        bonus[c] = bonus.get(c, 0.0) + v
-    notes += jn
-    bonus = {c: min(3.0, v) for c, v in bonus.items()}      # 加点は1人3点まで
+    jf, jn = jump_features(lines, by_car)
+    for c, v in jf.items():
+        feats.setdefault(c, {})["jump"] = v
+    return feats, notes + jn
+
+
+def position_bonus(lines, by_car, local_pref, weights):
+    """並びによる加点(点数)。1人3点まで"""
+    feats, notes = position_feats(lines, by_car, local_pref)
+    bonus = {c: min(3.0, sum(weights[k] * v for k, v in f.items())) for c, f in feats.items()}
     return bonus, notes
 
 
@@ -549,6 +557,27 @@ def pick_notes(notes, limit=3):
     follow = sorted((n for n in notes if n[0] == "follow"), key=lambda n: -n[1])
     follow = follow[:max(0, limit - len(local) - len(jump))]
     return [n[2] for n in follow + local + jump]
+
+
+def girls_compare(riders, n=3):
+    """ガールズ: ラインが無いので、上位選手の力量の根拠(得点順位・決まり手・直近成績)を1行ずつ示す"""
+    score_rank = {r["車"]: i for i, r in enumerate(sorted(riders, key=lambda r: -r["score"]), 1)}
+    out = []
+    for r in riders[:n]:
+        parts = [f"得点{r['score']:.1f}({score_rank[r['車']]}位)"]
+        j, m = jiriki_wins(r), follow_wins(r)
+        if j >= 3:
+            parts.append(f"逃げ・捲り勝ち{j}")
+        if m >= 3:
+            parts.append(f"差し・マーク勝ち{m}")
+        fm = r.get("form")
+        if fm and fm["n"] >= 3:
+            parts.append(f"直近平均{fm['avg']:.1f}着")
+        elif r.get("3連対率"):
+            parts.append(f"3連対{r['3連対率']}%")
+        style = r.get("脚", "")
+        out.append((f"{circ(r['車'])} {r['name']}" + (f"({style})" if style else ""), " / ".join(parts)))
+    return out
 
 
 def line_strength(ln, by_car):
@@ -599,7 +628,7 @@ def analyze(race):
         return None
     girls = is_girls_race(race, riders)
     for r in riders:
-        rider_rating(r)
+        rider_rating(r, girls)
         r["pos_bonus"] = 0.0
     by_car = {r["車"]: r for r in riders}
 
@@ -607,7 +636,8 @@ def analyze(race):
     lines = [] if girls else (race.get("lines") or [])
     pos_notes = []
     if lines:
-        bonus, pos_notes = position_bonus(lines, by_car, VENUE_PREF.get(race["venue"]))
+        bonus, pos_notes = position_bonus(lines, by_car, VENUE_PREF.get(race["venue"]),
+                                          WEIGHTS_GIRLS if girls else WEIGHTS)
         for car, bb in bonus.items():
             if car in by_car:
                 by_car[car]["pos_bonus"] = bb
@@ -706,12 +736,13 @@ def analyze(race):
     notes_txt = pick_notes(pos_notes)
     base_flow = flow_lines(lines, by_car, girls, riders, n_front, notes_txt)
     honmei_flow = list(base_flow)
-    ara_flow = list(base_flow)
+    ara_line = None
     if ara_kind == "番手狙い" and front_axis:
-        ara_flow.append(
-            f"{circ(ara_axis)}{name_of(by_car, ara_axis)}が{circ(front_axis)}の番手から差し・マークで抜け出す形")
+        ara_line = f"{circ(ara_axis)}{name_of(by_car, ara_axis)}が{circ(front_axis)}の番手から差し・マークで抜け出す形"
     elif ara_kind == "先行狙い" and front_axis:
-        ara_flow.append(f"{circ(front_axis)}{name_of(by_car, front_axis)}が単騎で先行して粘る形")
+        ara_line = f"{circ(front_axis)}{name_of(by_car, front_axis)}が単騎で先行して粘る形"
+    # 荒れ向きは、狙いの説明を先頭の次に置く(文の数を絞っても消えないように)
+    ara_flow = base_flow[:1] + ([ara_line] if ara_line else []) + base_flow[1:]
     if n_single >= 1 and not girls:
         ara_flow.append("単騎が展開をかき回す可能性")
 
@@ -738,7 +769,7 @@ def analyze(race):
         "cup": race.get("cup"), "day": race.get("day"),
         "race": race["race"],
         "deadline": deadline_min(race.get("title")),
-        "girls": girls,
+        "girls": girls, "girls_cmp": girls_compare(riders) if girls else [],
         "honmei": honmei, "ara": ara,
         "by_car": by_car, "lines": lines,
         "honmei_axis": top, "honmei_partners": partners,
@@ -795,26 +826,48 @@ def tri_text(t):
     return f"{circ(t['first'])}→{cs(t['second'])}→{cs(t['third'])} ({t['points']}点)"
 
 
+def _cw(ch):
+    """表示幅(全角・記号・絵文字=2、英数字=1)"""
+    return 1 if ord(ch) < 0x2000 else 2
+
+
+def wrap_text(text, width=36, indent="　"):
+    """携帯の画面幅(全角18字ほど)で折り返す。2行目以降は字下げする"""
+    lines, cur, w = [], "", 0
+    for i, ch in enumerate(text):
+        cw = _cw(ch)
+        rest = sum(_cw(c) for c in text[i:])
+        if w + cw > width and cur.strip() and rest > 6:      # 残りが3文字ほどなら、はみ出しても折り返さない
+            lines.append(cur.rstrip())
+            cur, w = indent, sum(_cw(c) for c in indent)
+        cur += ch
+        w += cw
+    lines.append(cur.rstrip())
+    return lines
+
+
 def axis_lines(r, car, level):
-    """軸選手の表示。名前・脚質・評価点・コメント・直近成績"""
+    """軸選手の表示。名前・脚質・評価点・直近成績(選手コメントは出さない)"""
     if not r:
         return [f"◎{circ(car)}"]
     kyaku = r.get("脚", "")
-    head = f"◎{circ(car)} {r['name']}" + (f"({kyaku})" if kyaku else "") + f" 評価{r['rating']:.1f}"
+    out = [f"◎{circ(car)} {r['name']}" + (f"({kyaku})" if kyaku else "")]
+    ev = f"　評価{r['rating']:.1f}"
     pb = r.get("pos_bonus") or 0
     if abs(pb) >= 0.3:
-        head += f"(並び{pb:+.1f}込み)"
-    out = [head]
-    cm = (r.get("コメント") or "").strip()
-    if cm:
-        out.append(f"　💬{cm}")
+        ev += f"(並び{pb:+.1f}込み)"
+    out.append(ev)
     f = r.get("form")
     if level >= 2 and f and f["n"] >= 3:
         mood = "(上り調子)" if f["trend"] >= 1.0 else ("(下り調子)" if f["trend"] <= -1.0 else "")
-        out.append(f"　📈直近{f['n']}走 平均{f['avg']:.1f}着 3着内{f['top3'] * 100:.0f}%{mood}")
+        out.append(f"　📈直近{f['n']}走 平均{f['avg']:.1f}着")
+        out.append(f"　　3着内{f['top3'] * 100:.0f}%{mood}")
         if f["acc"]:
             out.append(f"　⚠直近に事故{f['acc']}回")
     return out
+
+
+SEP = "━━━━━━━━━━━"
 
 
 def race_block(x, kind, idx, level=3):
@@ -827,22 +880,37 @@ def race_block(x, kind, idx, level=3):
         tags, verdict, score, icon = x["ara_tags"], x["ara_verdict"], x["ara"], "🌪"
     place = f"{x['venue']}" if idx is not None else ""
     n_flow = {3: 4, 2: 3, 1: 2}.get(level, 1)
-    reason = "・".join(tags[:3])
+    reason = "・".join(t for t in tags[:3] if "ガールズ" not in t)
 
-    # 先頭の空行で、前のレースとの間を空ける
-    out = ["", "━━━━━━━━━━", f"{icon} {place}{x['race']}R ⏰{fmt_time(x['deadline'])}締切",
-           "", "📈展開予想"]
-    out += ["・" + t for t in flow[:n_flow]]
+    # 先頭の空行2つで、前のレースとの間をはっきり空ける
+    out = ["", "", SEP, f"{icon} {place}{x['race']}R　⏰{fmt_time(x['deadline'])}締切", SEP]
+    out += ["", "📈展開予想"]
+    for t in flow[:n_flow]:
+        out += wrap_text("・" + t)
+    if x.get("girls") and x.get("girls_cmp") and level >= 1:
+        out += ["", "📊力量比較(ライン無し)"]
+        for title, detail in x["girls_cmp"]:
+            out.append(title)
+            out += wrap_text("　" + detail, indent="　")
     out += ["", "👤軸選手"] + axis_lines(x["by_car"].get(axis), axis, level)
     out += ["", "🎫3連単予想", "　" + tri_text(tri)]
     out += ["", "🎫2車単予想", f"　{circ(axis)}→{cs(partners)}"]
-    out += ["", f"⭐総合評価 {stars(score)}", f"　{verdict}" + (f"({reason})" if reason else "")]
+    out += ["", f"⭐総合評価 {stars(score)}", f"　{verdict}"]
+    if x.get("girls"):
+        out += wrap_text("　個人の力量(得点・決まり手・直近成績)の総合", indent="　")
+    if reason:
+        out += wrap_text(f"　({reason})", indent="　")
     if x["lines"] and level >= 1:
         out += ["", "🧭並び " + " ｜ ".join("-".join(map(str, ln)) for ln in x["lines"])]
     return "\n".join(out)
 
 
-FOOTER = "🎯=本命サイド 🌪=荒れ狙い / 評価=得点+直近成績などの補正\n※参考情報です。的中や回収を保証するものではありません。"
+def footer():
+    lines = ["🎯=本命サイド　🌪=荒れ狙い", "評価=得点+成績などの補正"]
+    if MODEL_RACES:
+        lines.append(f"評価は過去{MODEL_RACES}レースの結果で調整済み")
+    lines.append("※参考情報です。的中や回収を保証するものではありません。")
+    return "\n".join(lines)
 
 
 def pick_list(picks, show_venue):
@@ -852,7 +920,7 @@ def pick_list(picks, show_venue):
         icon = "🎯" if kind == "honmei" else "🌪"
         score = x["honmei"] if kind == "honmei" else x["ara"]
         place = x["venue"] if show_venue else ""
-        out.append(f"{icon}{place}{x['race']}R ⏰{fmt_time(x['deadline'])} {stars(score)}")
+        out.append(f"{icon}{place}{x['race']}R　⏰{fmt_time(x['deadline'])}　{stars(score)}")
     return out
 
 
@@ -862,18 +930,37 @@ def sort_picks(honmei, ara):
 
 
 def build_message(honmei, ara, level=3):
-    """全会場を1通にまとめる形"""
+    """全会場を1通にまとめる形(送信数が少ないときに使う)"""
     jst = datetime.now(timezone(timedelta(hours=9)))
     picks = sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
     out += pick_list(picks, True)
     for kind, x in picks:
         out.append(race_block(x, kind, 1, level))
-    out += ["", FOOTER]
+    out += ["", "", footer()]
     msg = "\n".join(out)
     if line_len(msg) > LINE_LIMIT and level > 0:
         return build_message(honmei, ara, level - 1)  # 長すぎる場合は詳細を減らす
     return msg
+
+
+def race_learn_row(race):
+    """学習用に、レースの全選手の特徴量(基本データだけ)を1行にまとめる"""
+    riders = [r for r in race["riders"] if r.get("score") is not None and r.get("車") is not None]
+    if len(riders) < 5:
+        return None
+    girls = is_girls_race(race, riders)
+    by_car = {r["車"]: r for r in riders}
+    feats = {r["車"]: rider_feats(r) for r in riders}
+    lines = [] if girls else (race.get("lines") or [])
+    if lines:
+        pf, _ = position_feats(lines, by_car, VENUE_PREF.get(race["venue"]))
+        for car, f in pf.items():
+            feats.setdefault(car, {}).update(f)
+    return {"k": f"{race['venue']}-{race.get('cup')}-{race.get('day')}-{race['race']}",
+            "g": int(girls),
+            "r": [[c, r["score"], [round(feats[c].get(k, 0.0), 3) for k in LEARN_KEYS]]
+                  for c, r in by_car.items()]}
 
 
 # ================= LINE配信 =================
