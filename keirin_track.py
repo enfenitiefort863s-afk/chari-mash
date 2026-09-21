@@ -6,9 +6,11 @@ import re
 import time
 from datetime import datetime, timezone, timedelta
 
+from concurrent.futures import ThreadPoolExecutor
+
 from bs4 import BeautifulSoup
 
-from keirin_line import BASE, clean, fetch, to_int
+from keirin_line import BASE, WORKERS, clean, fetch, to_int
 
 JST = timezone(timedelta(hours=9))
 DATA_DIR = os.environ.get("DATA_DIR", "data")
@@ -169,14 +171,19 @@ def process_pending():
     """結果が出ているレースを判定してcsvに追記。まだのレースは次回に持ち越し"""
     done = {r["pick_id"] for r in read_rows()}
     limit = (datetime.now(JST) - timedelta(days=2)).strftime("%Y%m%d")
-    new_rows = []
-    for p in load_picks(days=3):
-        if p["pick_id"] in done:
-            continue
+    pend = [p for p in load_picks(days=3) if p["pick_id"] not in done]
+
+    def get(p):
         url = f"{BASE}/keirin/{p['venue_key']}/raceresult/{p['cup']}/{p['day']}/{p['race']}"
         html = fetch(url, retries=0)
-        res = parse_result(html) if html else None
-        time.sleep(1.0)
+        time.sleep(0.3)
+        return parse_result(html) if html else None
+
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:      # 結果ページを並行して取得
+        parsed = list(ex.map(get, pend))
+
+    new_rows = []
+    for p, res in zip(pend, parsed):
         if res:
             new_rows.append(evaluate(p, res))
         elif p["date"] < limit:                # 2日たっても結果が取れない(中止など)
