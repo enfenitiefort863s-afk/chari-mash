@@ -18,7 +18,8 @@ PICK_DIR = os.path.join(DATA_DIR, "picks")
 RESULT_CSV = os.path.join(DATA_DIR, "results.csv")
 FIELDS = ["pick_id", "date", "slot", "kind", "venue", "venue_key", "race",
           "axis", "partners", "axis_finish", "first", "second", "third",
-          "kimarite", "hit", "cost", "payout", "status"]
+          "kimarite", "hit", "cost", "payout", "status",
+          "t3_hit", "t3_cost", "t3_payout"]
 KIND_LABEL = {"honmei": "🎯本命", "ara": "🌪荒れ"}
 
 
@@ -42,6 +43,7 @@ def save_picks(honmei, ara, results):
                 "kind": kind, "venue": x["venue"], "venue_key": x["venue_key"],
                 "cup": m.group(1), "day": int(m.group(2)), "race": x["race"],
                 "axis": axis, "partners": list(partners), "bet": bet,
+                "tri": x.get(f"{kind}_tri"),
             })
     if not picks:
         return
@@ -136,6 +138,16 @@ def evaluate(pick, res):
         for combo, amt in res["payouts"].get("2車単", []):
             if combo == f"{axis}-{second}":
                 payout = amt or 0
+    # 3連単(軸→2着候補→3着候補のフォーメーション)
+    tri = pick.get("tri")
+    t3_cost, t3_hit, t3_pay = 0, 0, 0
+    if tri:
+        t3_cost = 100 * tri["points"]
+        if first == tri["first"] and second in tri["second"] and third in tri["third"]:
+            t3_hit = 1
+            for combo, amt in res["payouts"].get("3連単", []):
+                if combo == f"{first}-{second}-{third}":
+                    t3_pay = amt or 0
     return {
         "pick_id": pick["pick_id"], "date": pick["date"], "slot": pick["slot"],
         "kind": pick["kind"], "venue": pick["venue"], "venue_key": pick["venue_key"],
@@ -145,6 +157,7 @@ def evaluate(pick, res):
         "first": first or "", "second": second or "", "third": third or "",
         "kimarite": res["kimarite"], "hit": int(hit),
         "cost": cost, "payout": payout, "status": "ok",
+        "t3_hit": t3_hit, "t3_cost": t3_cost, "t3_payout": t3_pay,
     }
 
 
@@ -158,9 +171,19 @@ def read_rows():
 
 def append_rows(rows):
     os.makedirs(DATA_DIR, exist_ok=True)
+    if os.path.exists(RESULT_CSV):
+        with open(RESULT_CSV, encoding="utf-8", newline="") as f:
+            header = next(csv.reader(f), [])
+        if header != FIELDS:                   # 列が増えた(3連単など)ときは、古い行も含めて書き直す
+            old = read_rows()
+            with open(RESULT_CSV, "w", encoding="utf-8", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=FIELDS, restval="", extrasaction="ignore")
+                w.writeheader()
+                for r in old:
+                    w.writerow(r)
     new_file = not os.path.exists(RESULT_CSV)
     with open(RESULT_CSV, "a", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w = csv.DictWriter(f, fieldnames=FIELDS, restval="", extrasaction="ignore")
         if new_file:
             w.writeheader()
         for r in rows:
@@ -194,6 +217,7 @@ def process_pending():
                 "partners": "-".join(map(str, p["partners"])),
                 "axis_finish": 0, "first": "", "second": "", "third": "",
                 "kimarite": "", "hit": 0, "cost": 0, "payout": 0, "status": "no_result",
+                "t3_hit": 0, "t3_cost": 0, "t3_payout": 0,
             })
     if new_rows:
         append_rows(new_rows)
@@ -206,6 +230,7 @@ def stats(rows):
     if not rows:
         return None
     n = len(rows)
+    tri = [r for r in rows if int(r.get("t3_cost") or 0) > 0]     # 3連単の記録がある分だけ
     return {
         "n": n,
         "win": sum(1 for r in rows if str(r["axis_finish"]) == "1"),
@@ -213,6 +238,10 @@ def stats(rows):
         "hit": sum(1 for r in rows if str(r["hit"]) == "1"),
         "cost": sum(int(r["cost"] or 0) for r in rows),
         "pay": sum(int(r["payout"] or 0) for r in rows),
+        "t3_n": len(tri),
+        "t3_hit": sum(1 for r in tri if str(r.get("t3_hit")) == "1"),
+        "t3_cost": sum(int(r["t3_cost"] or 0) for r in tri),
+        "t3_pay": sum(int(r.get("t3_payout") or 0) for r in tri),
     }
 
 
@@ -220,9 +249,14 @@ def fmt_stats(label, s):
     def pct(a, b):
         return f"{a * 100 / b:.0f}%" if b else "-"
     roi = f"{s['pay'] * 100 / s['cost']:.0f}%" if s["cost"] else "-"
-    return (f"{label} {s['n']}件\n"
+    text = (f"{label} {s['n']}件\n"
             f"　軸1着 {s['win']}件({pct(s['win'], s['n'])}) / 3着内 {s['top3']}件\n"
             f"　2車単的中 {s['hit']}件({pct(s['hit'], s['n'])}) / 回収率 {roi}")
+    if s["t3_n"]:
+        roi3 = f"{s['t3_pay'] * 100 / s['t3_cost']:.0f}%" if s["t3_cost"] else "-"
+        text += (f"\n　3連単的中 {s['t3_hit']}件({pct(s['t3_hit'], s['t3_n'])}) / 回収率 {roi3}"
+                 f"(記録{s['t3_n']}件)")
+    return text
 
 
 def build_report(new_rows):
@@ -259,5 +293,5 @@ def build_report(new_rows):
         out.append("【会場別(6件以上)】")
         out += [t for _, t in sorted(vlines, reverse=True)[:8]]
     out.append("")
-    out.append("※2車単・各100円で計算。参考情報です。")
+    out.append("※2車単・3連単とも各100円で計算。参考情報です。")
     return "\n".join(out)
