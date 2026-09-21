@@ -17,7 +17,7 @@ DATA_DIR = os.environ.get("DATA_DIR", "data")
 PICK_DIR = os.path.join(DATA_DIR, "picks")
 RESULT_CSV = os.path.join(DATA_DIR, "results.csv")
 FIELDS = ["pick_id", "date", "slot", "kind", "venue", "venue_key", "race",
-          "axis", "partners", "axis_finish", "first", "second", "third",
+          "axis", "axis_name", "partners", "axis_finish", "first", "second", "third",
           "kimarite", "hit", "cost", "payout", "status",
           "t3_hit", "t3_cost", "t3_payout"]
 KIND_LABEL = {"honmei": "🎯本命", "ara": "🌪荒れ"}
@@ -42,7 +42,8 @@ def save_picks(honmei, ara, results):
             picks.append({
                 "kind": kind, "venue": x["venue"], "venue_key": x["venue_key"],
                 "cup": m.group(1), "day": int(m.group(2)), "race": x["race"],
-                "axis": axis, "partners": list(partners), "bet": bet,
+                "axis": axis, "axis_name": (x["by_car"].get(axis) or {}).get("name", ""),
+                "partners": list(partners), "bet": bet,
                 "tri": x.get(f"{kind}_tri"),
             })
     if not picks:
@@ -83,6 +84,38 @@ def load_picks(days=3):
                 seen.add(pid)
                 out.append({**p, "pick_id": pid, "date": date, "slot": e.get("time", "")})
     return out
+
+
+# ---------------- 学習用データの保存(配信時点の特徴量) ----------------
+LEARN_DIR = os.path.join(DATA_DIR, "learn")
+
+
+def save_learn_rows(results):
+    """配信時点の全レースの特徴量を学習用に保存する(結果はあとで別途取得)"""
+    from keirin_line import race_learn_row
+    now = datetime.now(JST)
+    path = os.path.join(LEARN_DIR, now.strftime("%Y%m%d") + ".jsonl")
+    seen = set()
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                try:
+                    seen.add(json.loads(line)["k"])
+                except Exception:
+                    pass
+    new_rows = []
+    for rc in results:
+        row = race_learn_row(rc)
+        if row and row["k"] not in seen:
+            seen.add(row["k"])
+            new_rows.append(row)
+    if not new_rows:
+        return
+    os.makedirs(LEARN_DIR, exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        for row in new_rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    print(f"学習用データを保存しました: {path} ({len(new_rows)}レース)")
 
 
 # ---------------- 結果ページの読み取り ----------------
@@ -151,7 +184,7 @@ def evaluate(pick, res):
     return {
         "pick_id": pick["pick_id"], "date": pick["date"], "slot": pick["slot"],
         "kind": pick["kind"], "venue": pick["venue"], "venue_key": pick["venue_key"],
-        "race": pick["race"], "axis": axis,
+        "race": pick["race"], "axis": axis, "axis_name": pick.get("axis_name", ""),
         "partners": "-".join(map(str, partners)),
         "axis_finish": orders.get(axis) or 0,
         "first": first or "", "second": second or "", "third": third or "",
@@ -213,7 +246,7 @@ def process_pending():
             new_rows.append({
                 "pick_id": p["pick_id"], "date": p["date"], "slot": p["slot"],
                 "kind": p["kind"], "venue": p["venue"], "venue_key": p["venue_key"],
-                "race": p["race"], "axis": p["axis"],
+                "race": p["race"], "axis": p["axis"], "axis_name": p.get("axis_name", ""),
                 "partners": "-".join(map(str, p["partners"])),
                 "axis_finish": 0, "first": "", "second": "", "third": "",
                 "kimarite": "", "hit": 0, "cost": 0, "payout": 0, "status": "no_result",
@@ -259,6 +292,35 @@ def fmt_stats(label, s):
     return text
 
 
+def pickup_riders(rows, limit=3):
+    """今回の配信ぶんから、良い結果を出した選手を選んで短い文にする"""
+    ok = [r for r in rows if str(r.get("status")) == "ok" and r.get("axis_name")]
+    cand = []
+    for r in ok:
+        fin = str(r.get("axis_finish"))
+        if fin == "1":
+            tag = "🥇軸的中" + (f"・払戻{int(r['payout']):,}円" if str(r.get("hit")) == "1" and int(r.get("payout") or 0) else "")
+            score = 3 + (int(r.get("payout") or 0) / 1000)
+        elif fin in ("2", "3"):
+            tag = f"🥈{fin}着(僅差)"
+            score = 1
+        else:
+            continue
+        label = KIND_LABEL.get(r["kind"], "")
+        cand.append((score, f"{r['venue']}{r['race']}R {r['axis_name']}（{label}）{tag}"))
+    cand.sort(key=lambda t: -t[0])
+    seen, out = set(), []
+    for _, text in cand:
+        name = text.split("　")[0] if "　" in text else text
+        if text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def build_report(new_rows):
     now = datetime.now(JST)
     out = [f"📊 結果報告 {now.month}/{now.day} {now.hour}:{now.minute:02d}", ""]
@@ -271,6 +333,11 @@ def build_report(new_rows):
     if hits:
         out.append("✅的中: " + " / ".join(
             f"{r['venue']}{r['race']}R {int(r['payout']):,}円" for r in hits))
+    pu = pickup_riders(new_rows)
+    if pu:
+        out.append("")
+        out.append("🏆本日の好走ピックアップ")
+        out += ["・" + t for t in pu]
     all_rows = read_rows()
     out.append("")
     out.append("【累計】")
