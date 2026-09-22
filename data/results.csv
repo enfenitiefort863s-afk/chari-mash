@@ -77,3 +77,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,axis_finish,
 20260922-honmei-kochi-2,20260922,08:14,honmei,高知,kochi,2,1,,3-2-5,2,2,1,4,差,0,300,0,ok,0,600,0
 20260922-ara-kochi-3,20260922,08:14,ara,高知,kochi,3,2,,1-4,2,1,2,5,差,0,200,0,ok,0,600,0
 20260922-ara-sasebo-2,20260922,08:14,ara,佐世保,sasebo,2,1,,2-4,2,2,1,4,差,0,200,0,ok,0,600,0
+20260922-honmei-sasebo-4,20260922,08:14,honmei,佐世保,sasebo,4,1,,2-4-3,1,1,2,5,捲,1,300,590,ok,1,600,3890
