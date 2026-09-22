@@ -321,24 +321,50 @@ def pickup_riders(rows, limit=3):
     return out
 
 
+def report_date_str(now):
+    """7:20台の実行は日付が変わったあとに前日ぶんを報告するため、その場合は前日の日付にする"""
+    if now.hour < 10:
+        return (now - timedelta(days=1)).strftime("%Y%m%d")
+    return now.strftime("%Y%m%d")
+
+
+def build_alert(hits):
+    """的中したレースだけを、判明した時点ですぐ知らせる短い文"""
+    out = ["🔔的中速報！"]
+    for r in hits:
+        label = KIND_LABEL.get(r["kind"], "")
+        who = r.get("axis_name") or f"{r['axis']}番"
+        out.append(f"{r['venue']}{r['race']}R（{label}）")
+        out.append(f"　◎{who} → {r['second']}番 的中")
+        if int(r.get("payout") or 0):
+            out.append(f"　払戻 {int(r['payout']):,}円(2車単)")
+    out.append("")
+    out.append("※1日の結果は、23:40ごろの結果報告でまとめてお知らせします。")
+    return "\n".join(out)
+
+
 def build_report(new_rows):
     now = datetime.now(JST)
+    all_rows = read_rows()
+    target_date = report_date_str(now)
+    day_rows = [r for r in all_rows if r.get("date") == target_date]  # 速報ですでに記録済みの分も含む
+
     out = [f"📊 結果報告 {now.month}/{now.day} {now.hour}:{now.minute:02d}", ""]
-    out.append("【今回の結果】")
+    out.append("【本日の結果】" if day_rows else "【今回の結果】")
+    src = day_rows or new_rows
     for kind, label in KIND_LABEL.items():
-        s = stats([r for r in new_rows if r["kind"] == kind])
+        s = stats([r for r in src if r["kind"] == kind])
         if s:
             out.append(fmt_stats(label, s))
-    hits = [r for r in new_rows if str(r["hit"]) == "1"]
+    hits = [r for r in src if str(r["hit"]) == "1"]
     if hits:
         out.append("✅的中: " + " / ".join(
             f"{r['venue']}{r['race']}R {int(r['payout']):,}円" for r in hits))
-    pu = pickup_riders(new_rows)
+    pu = pickup_riders(src)
     if pu:
         out.append("")
         out.append("🏆本日の好走ピックアップ")
         out += ["・" + t for t in pu]
-    all_rows = read_rows()
     out.append("")
     out.append("【累計】")
     for kind, label in KIND_LABEL.items():
