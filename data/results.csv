@@ -73,3 +73,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,axis_finish,
 20260922-honmei-aomori-10,20260922,19:26,honmei,青森,aomori,10,7,雨谷一樹,2-5-1,1,7,4,2,捲,0,300,0,ok,0,600,0
 20260922-honmei-aomori-11,20260922,19:26,honmei,青森,aomori,11,2,小川真太郎,4-1-7,1,2,5,1,差,0,300,0,ok,0,600,0
 20260922-ara-aomori-12,20260922,19:26,ara,青森,aomori,12,2,松尾透,4-1,5,4,5,1,捲,0,200,0,ok,0,600,0
+20260922-honmei-kochi-1,20260922,08:14,honmei,高知,kochi,1,1,,2-3-4,1,1,7,6,逃,0,300,0,ok,0,600,0
+20260922-honmei-kochi-2,20260922,08:14,honmei,高知,kochi,2,1,,3-2-5,2,2,1,4,差,0,300,0,ok,0,600,0
