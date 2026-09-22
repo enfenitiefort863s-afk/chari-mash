@@ -19,6 +19,7 @@ SPLIT_MODE = os.environ.get("SPLIT_MODE") or "auto"           # auto:送信数�
 PER_VENUE = int(os.environ.get("PER_VENUE") or 2)             # 会場ごとの本命・荒れの件数
 MAX_MESSAGES = int(os.environ.get("MAX_MESSAGES") or 10)      # 1回の配信で送る最大通数
 VENUES = [v.strip() for v in (os.environ.get("VENUES") or "").split(",") if v.strip()]
+SESSION = os.environ.get("SESSION") or "all"   # day:通常開催のみ / midnight:ミッドナイトのみ / all:両方
 
 LINE_API = "https://api.line.me/v2/bot/message"
 
@@ -177,6 +178,12 @@ def main():
     print(f"取得レース数: {len(results)}")
     if VENUES:
         print(f"会場を絞り込み中: {VENUES}")   # 絞り込みは keirin_line.py 側(fetch_all_today)で行う
+    if SESSION == "day":
+        results = [rc for rc in results if not k.is_midnight_race(rc.get("title"))]
+        print(f"通常開催のみに絞り込み -> {len(results)}レース")
+    elif SESSION == "midnight":
+        results = [rc for rc in results if k.is_midnight_race(rc.get("title"))]
+        print(f"ミッドナイトのみに絞り込み -> {len(results)}レース")
     if not results:
         print("レースを取得できなかったため送信しません")
         return
