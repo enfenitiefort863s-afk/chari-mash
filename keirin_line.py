@@ -381,6 +381,18 @@ def venue_ok(key):
     return key in VENUES or VENUE_JP.get(key, key) in VENUES
 
 
+def is_midnight_race(title):
+    """ミッドナイト競輪(21時以降〜早朝に締切があるレース)かどうか"""
+    if not title:
+        return False
+    if "ミッドナイト" in title:
+        return True
+    d = deadline_min(title)
+    if d is None:
+        return False
+    return d >= 21 * 60 or d < 6 * 60   # 21時以降、または深夜〜早朝(前日からの続き)
+
+
 def deadline_min(title):
     """タイトルから締切時刻(0時からの分)を取る。取れなければNone"""
     m = re.search(r"締切\s*(\d{1,2}):(\d{2})", title or "")
