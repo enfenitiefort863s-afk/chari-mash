@@ -2,10 +2,9 @@ name: keirin-line
 
 on:
   schedule:
-    # GitHubのcronはUTC。日本時間 8:00 / 13:00 / 20:00
-    - cron: "0 23 * * *"
-    - cron: "0 4 * * *"
-    - cron: "0 11 * * *"
+    # GitHubのcronはUTC。日本時間 8:00(通常開催)/ 20:00(ミッドナイト)
+    - cron: "0 23 * * *"   # 8:00 JST -> 通常開催(ナイターまで)
+    - cron: "0 11 * * *"   # 20:00 JST -> ミッドナイトのみ
   workflow_dispatch: {}   # 手動実行ボタン用
 
 permissions:
@@ -32,6 +31,7 @@ jobs:
           PER_VENUE: ${{ vars.PER_VENUE }}
           MAX_MESSAGES: ${{ vars.MAX_MESSAGES }}
           ENRICH_BUDGET: "600"
+          SESSION: ${{ (github.event.schedule == '0 23 * * *' && 'day') || (github.event.schedule == '0 11 * * *' && 'midnight') || 'all' }}
       - name: Save data
         if: always()
         run: |
