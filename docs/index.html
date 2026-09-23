@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>予想ログ</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+         background:#0b1220; color:#eee; margin:0; padding:16px;
+         padding-top:calc(16px + env(safe-area-inset-top,0px));
+         padding-bottom:calc(16px + env(safe-area-inset-bottom,0px)); }
+  h1 { font-size:18px; margin:0 0 12px; }
+  #gate { max-width:340px; margin:80px auto 0; text-align:center; }
+  #gate input { width:100%; padding:12px; font-size:16px; border-radius:8px;
+                border:1px solid #445; background:#111a2b; color:#fff; box-sizing:border-box; }
+  #gate button { margin-top:10px; width:100%; padding:12px; font-size:16px; border-radius:8px;
+                 border:none; background:#2d7dfc; color:#fff; }
+  #err { color:#ff6b6b; font-size:13px; margin-top:8px; min-height:16px; }
+  .entry { background:#131b2e; border:1px solid #223247; border-radius:10px; padding:12px 14px;
+           margin-bottom:12px; white-space:pre-wrap; word-break:break-word; font-size:14px; line-height:1.65; }
+  .meta { color:#7fa0c8; font-size:12px; margin-bottom:6px; }
+  #content { display:none; max-width:600px; margin:0 auto; }
+  #updated { color:#8899aa; font-size:12px; text-align:center; margin-bottom:14px; }
+</style>
+</head>
+<body>
+  <div id="gate">
+    <h1>🔒パスワードを入力</h1>
+    <input id="pw" type="password" placeholder="パスワード" autofocus>
+    <button id="btn">開く</button>
+    <div id="err"></div>
+  </div>
+  <div id="content">
+    <div id="updated"></div>
+    <div id="list"></div>
+  </div>
+<script>
+function toBytes(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+async function unlock() {
+  const pw = document.getElementById('pw').value;
+  const err = document.getElementById('err');
+  err.textContent = '';
+  if (!pw) return;
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    const payload = await res.json();
+    const salt = toBytes(payload.salt);
+    const iv = toBytes(payload.iv);
+    const data = toBytes(payload.data);
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(pw), { name: 'PBKDF2' }, false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
+    const entries = JSON.parse(new TextDecoder().decode(plainBuf));
+    render(entries, payload.updated);
+    try { sessionStorage.setItem('pw', pw); } catch (e) {}
+  } catch (e) {
+    err.textContent = 'パスワードが違うか、データを読み込めませんでした';
+  }
+}
+
+function render(entries, updated) {
+  document.getElementById('updated').textContent = '最終更新: ' + updated;
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  entries.slice().reverse().forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = e.time + (e.label ? '　' + e.label : '');
+    const body = document.createElement('div');
+    body.textContent = e.text;
+    div.appendChild(meta);
+    div.appendChild(body);
+    list.appendChild(div);
+  });
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+document.getElementById('btn').addEventListener('click', unlock);
+document.getElementById('pw').addEventListener('keydown', ev => { if (ev.key === 'Enter') unlock(); });
+
+// 同じ端末・同じタブを開いている間は、次回から自動で開く(パスワードの再入力を省く)
+(function () {
+  try {
+    const saved = sessionStorage.getItem('pw');
+    if (saved) { document.getElementById('pw').value = saved; unlock(); }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
