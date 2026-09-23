@@ -87,3 +87,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,axis_finish,
 20260923-ara-omiya-7,20260923,08:13,ara,大宮,omiya,7,7,北村篤,2-3,3,3,1,7,差,0,200,0,ok,0,600,0
 20260923-ara-ogaki-1,20260923,08:13,ara,大垣,ogaki,1,3,小林寛弥,5-1,2,5,3,4,差,0,200,0,ok,0,600,0
 20260923-ara-tachikawa-2,20260923,08:13,ara,立川,tachikawa,2,7,島野浩司,5-1,5,1,4,2,差,0,200,0,ok,0,600,0
+20260923-ara-ogaki-2,20260923,08:13,ara,大垣,ogaki,2,2,飯田威文,4-1,3,4,1,2,逃,0,200,0,ok,0,600,0
