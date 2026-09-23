@@ -2,12 +2,17 @@ name: keirin-alert
 
 on:
   schedule:
-    # 20分おき(JST 9:00〜24:59ごろ=UTC 0:00〜15:59)。的中したときだけLINEに送る
-    - cron: "*/20 0-15 * * *"
+    # 5分おき(JST 9:00〜24:59ごろ=UTC 0:00〜15:59)。的中したときだけLINEに送る
+    # 公開リポジトリはActionsの実行時間が無料・無制限なので、頻度を上げても費用はかからない
+    - cron: "*/5 0-15 * * *"
   workflow_dispatch: {}
 
 permissions:
   contents: write
+
+concurrency:
+  group: keirin-alert
+  cancel-in-progress: false
 
 jobs:
   alert:
@@ -25,13 +30,14 @@ jobs:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           WORKERS: ${{ vars.WORKERS }}
+          PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
       - name: Save data
         if: always()
         run: |
           mkdir -p data
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
+          git add data docs
           if ! git diff --cached --quiet; then
             git commit -m "update results (alert)"
             git pull --rebase
