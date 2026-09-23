@@ -925,6 +925,15 @@ def footer():
     return "\n".join(lines)
 
 
+def page_url():
+    """GitHub Pagesの閲覧URL。Actions実行中は GITHUB_REPOSITORY (owner/repo) から自動で組み立てる"""
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo or "/" not in repo:
+        return None
+    owner, name = repo.split("/", 1)
+    return f"https://{owner}.github.io/{name}/"
+
+
 def pick_list(picks, show_venue):
     """『おすすめレース』の一覧(締切順)"""
     out = ["🏁おすすめレース"]
@@ -941,8 +950,8 @@ def sort_picks(honmei, ara):
     return sorted(picks, key=lambda t: (t[1]["deadline"] if t[1]["deadline"] is not None else 9999, t[1]["race"]))
 
 
-def build_message(honmei, ara, level=3):
-    """全会場を1通にまとめる形(送信数が少ないときに使う)"""
+def build_message(honmei, ara, level=3, enforce_limit=True):
+    """展開予想・買い目まで含めたフル版。LINEには使わず、ページ(GitHub Pages)用に使う"""
     jst = datetime.now(timezone(timedelta(hours=9)))
     picks = sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
@@ -951,9 +960,23 @@ def build_message(honmei, ara, level=3):
         out.append(race_block(x, kind, 1, level))
     out += ["", "", footer()]
     msg = "\n".join(out)
-    if line_len(msg) > LINE_LIMIT and level > 0:
-        return build_message(honmei, ara, level - 1)  # 長すぎる場合は詳細を減らす
+    if enforce_limit and line_len(msg) > LINE_LIMIT and level > 0:
+        return build_message(honmei, ara, level - 1, enforce_limit)
     return msg
+
+
+def build_short_message(honmei, ara, url=None):
+    """LINE用の短い版。おすすめレースの一覧だけを出し、詳細はページのURLに誘導する"""
+    jst = datetime.now(timezone(timedelta(hours=9)))
+    picks = sort_picks(honmei, ara)
+    out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
+    out += pick_list(picks, True)
+    out.append("")
+    if url:
+        out.append(f"🔗展開予想・買い目はこちら\n{url}")
+    else:
+        out.append("(ページのURLがまだ設定されていません)")
+    return "\n".join(out)
 
 
 def race_learn_row(race):
