@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 
 import keirin_line as k
+import keirin_web as kw
 from keirin_track import save_picks, save_learn_rows
 
 JST = timezone(timedelta(hours=9))
@@ -60,7 +61,7 @@ def allowed_messages():
     now = datetime.now(JST)
     days_left = calendar.monthrange(now.year, now.month)[1] - now.day + 1
     deliveries_left = 2 * days_left          # 1日2回の配信(朝8時・夜8時)
-    reserve = 2 * days_left                  # 結果報告(1日最大2通)の分
+    reserve = 5 * days_left                  # 結果報告(1日2通)+的中速報(1日3通ぶんの余裕)
     per = (rem - reserve) // deliveries_left
     print(f"今月の残り送信数 {rem}通 -> 1回あたり {per}通まで")
     if rem <= 0:
@@ -245,7 +246,14 @@ def main():
             return
         texts = [k.build_message(honmei, ara)]
 
-    send_messages(texts)
+    try:
+        kw.publish(texts, label="予想配信")
+    except Exception as e:
+        print("ページの更新に失敗(LINE配信は続けます):", e)
+    try:
+        send_messages(texts)
+    except Exception as e:
+        print("LINE送信に失敗しました(ページには反映済みです):", e)
     save_picks(honmei, ara, results)
     try:
         save_learn_rows(results)                 # 学習用: 全レースの特徴量
