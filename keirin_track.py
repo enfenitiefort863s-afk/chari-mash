@@ -339,6 +339,10 @@ def build_alert(hits):
         if int(r.get("payout") or 0):
             out.append(f"　払戻 {int(r['payout']):,}円(2車単)")
     out.append("")
+    from keirin_line import page_url
+    url = page_url()
+    if url:
+        out.append(f"🔗これまでの配信・結果はこちら\n{url}")
     out.append("※1日の結果は、23:40ごろの結果報告でまとめてお知らせします。")
     return "\n".join(out)
 
@@ -386,5 +390,9 @@ def build_report(new_rows):
         out.append("【会場別(6件以上)】")
         out += [t for _, t in sorted(vlines, reverse=True)[:8]]
     out.append("")
+    from keirin_line import page_url
+    url = page_url()
+    if url:
+        out.append(f"🔗これまでの配信・結果はこちら\n{url}")
     out.append("※2車単・3連単とも各100円で計算。参考情報です。")
     return "\n".join(out)
