@@ -105,3 +105,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,axis_finish,
 20260923-ara-ito-5,20260923,08:13,ara,伊東,ito,5,5,橋本智昭,4-1,6,7,3,4,捲,0,200,0,ok,0,600,0
 20260923-honmei-ito-6,20260923,08:13,honmei,伊東,ito,6,2,畠山ひすい,4-1-7,2,1,2,3,捲,0,300,0,ok,0,600,0
 20260923-honmei-aomori-6,20260923,08:13,honmei,青森,aomori,6,5,和泉尚吾,1-4-2,4,2,3,6,差,0,300,0,ok,0,600,0
+20260923-ara-aomori-9,20260923,08:13,ara,青森,aomori,9,7,皿屋豊,3-1,1,7,3,1,差,1,200,340,ok,1,600,950
