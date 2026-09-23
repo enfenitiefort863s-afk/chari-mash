@@ -90,3 +90,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,axis_finish,
 20260923-ara-ogaki-2,20260923,08:13,ara,大垣,ogaki,2,2,飯田威文,4-1,3,4,1,2,逃,0,200,0,ok,0,600,0
 20260923-honmei-ogaki-4,20260923,08:13,honmei,大垣,ogaki,4,1,坂井央雅,2-4-7,1,1,2,4,捲,1,300,360,ok,1,600,1770
 20260923-honmei-komatsushima-4,20260923,08:13,honmei,小松島,komatsushima,4,2,安達光伸,4-7-5,2,4,2,6,差,0,300,0,ok,0,600,0
+20260923-ara-komatsushima-5,20260923,08:13,ara,小松島,komatsushima,5,4,保科千春,6-7,6,2,7,3,捲,0,200,0,ok,0,600,0
