@@ -97,3 +97,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,axis_finish,
 20260923-honmei-tachikawa-9,20260923,08:13,honmei,立川,tachikawa,9,3,久田朔,5-7-2,4,1,2,5,差,0,300,0,ok,0,600,0
 20260923-honmei-komatsushima-9,20260923,08:13,honmei,小松島,komatsushima,9,7,田中晴基,2-4-1,2,2,7,4,捲,0,300,0,ok,0,600,0
 20260923-honmei-ito-1,20260923,08:13,honmei,伊東,ito,1,3,橋本陸,2-4-7,6,6,2,4,差,0,300,0,ok,0,600,0
+20260923-ara-tachikawa-12,20260923,08:13,ara,立川,tachikawa,12,2,山口敦也,7-7,6,1,4,5,捲,0,200,0,ok,0,400,0
+20260923-ara-aomori-2,20260923,08:13,ara,青森,aomori,2,6,堀僚介,4,7,2,4,7,差,0,100,0,ok,0,300,0
