@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from keirin_line import BASE, LEARN_KEYS, PRIOR_WEIGHTS, WORKERS, fetch
-from keirin_track import DATA_DIR, LEARN_DIR, parse_result
+from keirin_track import DATA_DIR, LEARN_DIR, parse_result, read_rows
 
 MODEL_PATH = os.environ.get("MODEL_PATH") or os.path.join(DATA_DIR, "model.json")
 MIN_RACES = 150          # これ未満なら、まだ重みを更新しない
@@ -78,33 +78,77 @@ def learn_weights(keys, rows):
     return weights
 
 
+# ---------------- 実際の的中率・回収率からの、しきい値の学習 ----------------
+MIN_THRESHOLD_ROWS = 60     # これ未満なら、まだしきい値を更新しない
+TARGET_ROI = 90              # この回収率(%)を下回るスコア帯は、配信から外す候補にする
+
+
+def tune_thresholds():
+    """results.csv(実際の的中・回収)から、本命/荒れそれぞれの
+    『これ以上のスコアなら配信してよい』という下限値を求める。
+    スコアが低い順に少しずつ切り捨てながら、残りの回収率が目標を超える一番緩い所を探す"""
+    rows = [r for r in read_rows() if str(r.get("status")) == "ok" and r.get("score") not in (None, "")]
+    out = {}
+    for kind in ("honmei", "ara"):
+        rs = sorted((r for r in rows if r["kind"] == kind), key=lambda r: float(r["score"]))
+        if len(rs) < MIN_THRESHOLD_ROWS:
+            continue
+        best = None
+        # スコアの低いほうから2割ずつ切り捨てて、回収率が目標を超えたら、そこを下限にする
+        for cut in range(0, 9):
+            keep = rs[int(len(rs) * cut / 10):]
+            if len(keep) < MIN_THRESHOLD_ROWS // 2:
+                break
+            cost = sum(int(r["cost"] or 0) for r in keep)
+            pay = sum(int(r["payout"] or 0) for r in keep)
+            roi = (pay * 100 / cost) if cost else 0
+            if roi >= TARGET_ROI:
+                best = float(keep[0]["score"])
+                break
+        if best is not None:
+            out[kind] = round(best, 2)
+    return out
+
+
 def main():
     rows = load_learn_rows()
     print(f"学習データ候補 {len(rows)}レース")
-    if not rows:
-        return
-
-    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-        finishes = list(ex.map(fetch_finish, rows))
-
     men_rows, girls_rows = [], []
-    for row, first in zip(rows, finishes):
-        if first is None:
-            continue
-        (girls_rows if row.get("g") else men_rows).append((row, first))
-    print(f"結果が判明: 男子{len(men_rows)}レース / ガールズ{len(girls_rows)}レース")
+    if rows:
+        with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+            finishes = list(ex.map(fetch_finish, rows))
+        for row, first in zip(rows, finishes):
+            if first is None:
+                continue
+            (girls_rows if row.get("g") else men_rows).append((row, first))
+        print(f"結果が判明: 男子{len(men_rows)}レース / ガールズ{len(girls_rows)}レース")
 
     men_w = learn_weights(LEARN_KEYS, men_rows) if len(men_rows) >= MIN_RACES else None
     girls_w = learn_weights(LEARN_KEYS, girls_rows) if len(girls_rows) >= MIN_RACES else None
     if not men_w and not girls_w:
-        print(f"学習には{MIN_RACES}レース以上が必要です(まだ達していません)")
-        return
+        print(f"重みの学習には{MIN_RACES}レース以上が必要です(まだ達していません)")
 
-    model = {
-        "n_races": len(men_rows) + len(girls_rows),
-        "men": men_w or PRIOR_WEIGHTS,
-        "girls": girls_w or PRIOR_WEIGHTS,
-    }
+    # 既存のモデル(あれば)に、更新できた分だけ重ねる
+    try:
+        with open(MODEL_PATH, encoding="utf-8") as f:
+            model = json.load(f)
+    except Exception:
+        model = {}
+    if men_w or girls_w:
+        model["n_races"] = len(men_rows) + len(girls_rows)
+        model["men"] = men_w or model.get("men") or PRIOR_WEIGHTS
+        model["girls"] = girls_w or model.get("girls") or PRIOR_WEIGHTS
+
+    thresholds = tune_thresholds()
+    if thresholds:
+        model["min_score"] = thresholds
+        print("スコアのしきい値を更新しました:", thresholds)
+    else:
+        print("しきい値の学習には、まだ判定済みのレースが足りません")
+
+    if not model:
+        print("更新できるものがありませんでした")
+        return
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(MODEL_PATH, "w", encoding="utf-8") as f:
         json.dump(model, f, ensure_ascii=False, indent=1)
