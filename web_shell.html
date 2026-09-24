@@ -5,36 +5,176 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>予想ログ</title>
 <style>
-  :root { color-scheme: dark; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
-         background:#0b1220; color:#eee; margin:0; padding:16px;
-         padding-top:calc(16px + env(safe-area-inset-top,0px));
-         padding-bottom:calc(16px + env(safe-area-inset-bottom,0px)); }
-  h1 { font-size:18px; margin:0 0 12px; }
-  #gate { max-width:340px; margin:80px auto 0; text-align:center; }
-  #gate input { width:100%; padding:12px; font-size:16px; border-radius:8px;
-                border:1px solid #445; background:#111a2b; color:#fff; box-sizing:border-box; }
-  #gate button { margin-top:10px; width:100%; padding:12px; font-size:16px; border-radius:8px;
-                 border:none; background:#2d7dfc; color:#fff; }
-  #err { color:#ff6b6b; font-size:13px; margin-top:8px; min-height:16px; }
-  .entry { background:#131b2e; border:1px solid #223247; border-radius:10px; padding:12px 14px;
-           margin-bottom:12px; white-space:pre-wrap; word-break:break-word; font-size:14px; line-height:1.65; }
-  .meta { color:#7fa0c8; font-size:12px; margin-bottom:6px; }
-  #content { display:none; max-width:600px; margin:0 auto; }
-  #updated { color:#8899aa; font-size:12px; text-align:center; margin-bottom:14px; }
+  :root {
+    color-scheme: dark;
+    --bg: #0a0e14;
+    --bg-elev: #10151d;
+    --card: #151b26;
+    --card-border: #232b3a;
+    --line: #1e2532;
+    --lime: #cbe000;
+    --lime-dim: #8f9c00;
+    --orange: #ff7a1a;
+    --text: #eef1f5;
+    --text-sub: #8b96a8;
+    --text-faint: #5c6779;
+    --danger: #ff5b5b;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev) 85%, transparent);
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  header .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  header .mark {
+    display: inline-block;
+    width: 8px; height: 18px;
+    background: var(--lime);
+    border-radius: 2px;
+  }
+  header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+  header .sub {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
+  #gate {
+    max-width: 340px;
+    margin: 90px auto 0;
+    text-align: center;
+    padding: 0 20px;
+  }
+  #gate .lock {
+    font-size: 30px;
+    margin-bottom: 6px;
+  }
+  #gate h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 16px;
+    color: var(--text-sub);
+  }
+  #gate input {
+    width: 100%;
+    padding: 13px 14px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: var(--card);
+    color: var(--text);
+    box-sizing: border-box;
+  }
+  #gate input:focus {
+    outline: none;
+    border-color: var(--lime-dim);
+  }
+  #gate button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 10px;
+    border: none;
+    background: var(--lime);
+    color: #14180a;
+  }
+  #gate button:active { opacity: 0.85; }
+  #err { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+  #content { display: none; max-width: 640px; margin: 0 auto; padding: 14px 14px 40px; }
+  #updated {
+    color: var(--text-faint);
+    font-size: 11px;
+    text-align: right;
+    margin: 4px 4px 12px;
+  }
+
+  .entry {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--line);
+  }
+  .entry-time {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .badge.予想配信 { background: rgba(203,224,0,0.16); color: var(--lime); }
+  .badge.的中速報 { background: rgba(255,122,26,0.16); color: var(--orange); }
+  .badge.結果報告 { background: rgba(139,150,168,0.16); color: var(--text-sub); }
+  .badge.default  { background: rgba(139,150,168,0.16); color: var(--text-sub); }
+
+  .entry-body {
+    padding: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13.5px;
+    line-height: 1.75;
+  }
 </style>
 </head>
 <body>
+  <header>
+    <div class="brand"><span class="mark"></span><h1>マッシュチャリンコ</h1></div>
+    <div class="sub">予想・的中・結果ログ</div>
+  </header>
+
   <div id="gate">
-    <h1>🔒パスワードを入力</h1>
+    <div class="lock">🔒</div>
+    <h2>パスワードを入力してください</h2>
     <input id="pw" type="password" placeholder="パスワード" autofocus>
     <button id="btn">開く</button>
     <div id="err"></div>
   </div>
+
   <div id="content">
     <div id="updated"></div>
     <div id="list"></div>
   </div>
+
 <script>
 function toBytes(b64) {
   const bin = atob(b64);
@@ -70,19 +210,32 @@ async function unlock() {
 }
 
 function render(entries, updated) {
-  document.getElementById('updated').textContent = '最終更新: ' + updated;
+  document.getElementById('updated').textContent = '最終更新 ' + updated;
   const list = document.getElementById('list');
   list.innerHTML = '';
   entries.slice().reverse().forEach(e => {
     const div = document.createElement('div');
     div.className = 'entry';
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = e.time + (e.label ? '　' + e.label : '');
+
+    const head = document.createElement('div');
+    head.className = 'entry-head';
+    const time = document.createElement('span');
+    time.className = 'entry-time';
+    time.textContent = e.time;
+    head.appendChild(time);
+    if (e.label) {
+      const badge = document.createElement('span');
+      badge.className = 'badge ' + (['予想配信','的中速報','結果報告'].includes(e.label) ? e.label : 'default');
+      badge.textContent = e.label;
+      head.appendChild(badge);
+    }
+    div.appendChild(head);
+
     const body = document.createElement('div');
+    body.className = 'entry-body';
     body.textContent = e.text;
-    div.appendChild(meta);
     div.appendChild(body);
+
     list.appendChild(div);
   });
   document.getElementById('gate').style.display = 'none';
@@ -92,7 +245,6 @@ function render(entries, updated) {
 document.getElementById('btn').addEventListener('click', unlock);
 document.getElementById('pw').addEventListener('keydown', ev => { if (ev.key === 'Enter') unlock(); });
 
-// 同じ端末・同じタブを開いている間は、次回から自動で開く(パスワードの再入力を省く)
 (function () {
   try {
     const saved = sessionStorage.getItem('pw');
