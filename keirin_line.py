@@ -431,6 +431,19 @@ def load_weights(path=None):
 WEIGHTS, WEIGHTS_GIRLS, MODEL_RACES = load_weights()
 
 
+def load_min_score(path=None):
+    """実際の的中率・回収率から学習した、配信してよいスコアの下限値(keirin_learn.py が作る)"""
+    try:
+        with open(path or MODEL_PATH, encoding="utf-8") as f:
+            m = json.load(f)
+        return {k: float(v) for k, v in (m.get("min_score") or {}).items()}
+    except Exception:
+        return {}
+
+
+MIN_SCORE = load_min_score()
+
+
 def rider_feats(r):
     """選手ごとの特徴量。3連対率・自力(逃/捲)・差し/マークの実績"""
     def k(key):
