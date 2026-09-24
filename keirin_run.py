@@ -49,6 +49,20 @@ def enrich_top(races, top=5):
             r["rel"] = k._REL_CACHE.get(pid, {})
 
 
+def apply_min_score(honmei, ara):
+    """実際の的中率・回収率から学習したしきい値(あれば)で、自信の無いレースを間引く。
+    しきい値未満のものを全部外すと0件になる場合は、念のため一番上のものだけ残す"""
+    min_h = k.MIN_SCORE.get("honmei")
+    min_a = k.MIN_SCORE.get("ara")
+    if min_h is not None:
+        kept = [x for x in honmei if x["honmei"] >= min_h]
+        honmei = kept or honmei[:1]
+    if min_a is not None:
+        kept = [x for x in ara if x["ara"] >= min_a]
+        ara = kept or ara[:1]
+    return honmei, ara
+
+
 def main():
     results = k.fetch_all_today()
     print(f"取得レース数: {len(results)}")
@@ -77,6 +91,7 @@ def main():
 
     # 2段目: 直近成績も入れた評価で、最終の「おすすめレース」を決める
     honmei, ara = k.pick(cand, only_upcoming=True, n=N_PICKS)
+    honmei, ara = apply_min_score(honmei, ara)
     if not honmei and not ara:
         print("対象レースがないため送信しません")
         return
