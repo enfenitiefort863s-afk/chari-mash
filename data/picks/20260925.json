@@ -1,0 +1,312 @@
+[
+ {
+  "time": "08:13",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026092486",
+    "day": 2,
+    "race": 6,
+    "axis": 4,
+    "axis_name": "児玉碧衣",
+    "partners": [
+     6,
+     3,
+     2
+    ],
+    "bet": "4→6,3,2 (2車単 軸流し)",
+    "score": 25.93,
+    "tri": {
+     "first": 4,
+     "second": [
+      6,
+      3
+     ],
+     "third": [
+      6,
+      3,
+      2,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "伊東",
+    "venue_key": "ito",
+    "cup": "2026092337",
+    "day": 3,
+    "race": 2,
+    "axis": 4,
+    "axis_name": "渡邊健",
+    "partners": [
+     3,
+     7,
+     2
+    ],
+    "bet": "4→3,7,2 (2車単 軸流し)",
+    "score": 23.92,
+    "tri": {
+     "first": 4,
+     "second": [
+      3,
+      7
+     ],
+     "third": [
+      3,
+      7,
+      2,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "伊東",
+    "venue_key": "ito",
+    "cup": "2026092337",
+    "day": 3,
+    "race": 7,
+    "axis": 2,
+    "axis_name": "山崎芳仁",
+    "partners": [
+     5,
+     4,
+     7
+    ],
+    "bet": "2→5,4,7 (2車単 軸流し)",
+    "score": 20.95,
+    "tri": {
+     "first": 2,
+     "second": [
+      5,
+      4
+     ],
+     "third": [
+      5,
+      4,
+      7,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026092486",
+    "day": 2,
+    "race": 11,
+    "axis": 4,
+    "axis_name": "半田誠",
+    "partners": [
+     3,
+     2,
+     5
+    ],
+    "bet": "4→3,2,5 (2車単 軸流し)",
+    "score": 20.92,
+    "tri": {
+     "first": 4,
+     "second": [
+      3,
+      2
+     ],
+     "third": [
+      3,
+      2,
+      5,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026092486",
+    "day": 2,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "沢田桂太郎",
+    "partners": [
+     4,
+     7,
+     2
+    ],
+    "bet": "1→4,7,2 (2車単 軸流し)",
+    "score": 17.88,
+    "tri": {
+     "first": 1,
+     "second": [
+      4,
+      7
+     ],
+     "third": [
+      4,
+      7,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小松島",
+    "venue_key": "komatsushima",
+    "cup": "2026092373",
+    "day": 3,
+    "race": 11,
+    "axis": 3,
+    "axis_name": "蒔田英彦",
+    "partners": [
+     7,
+     5
+    ],
+    "bet": "3→7,5 (2車単 番手狙い)",
+    "score": 16.36,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      5
+     ],
+     "third": [
+      7,
+      5,
+      2,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小松島",
+    "venue_key": "komatsushima",
+    "cup": "2026092373",
+    "day": 3,
+    "race": 2,
+    "axis": 6,
+    "axis_name": "田村裕也",
+    "partners": [
+     1,
+     1
+    ],
+    "bet": "6→1,1 (2車単 番手狙い)",
+    "score": 15.17,
+    "tri": {
+     "first": 6,
+     "second": [
+      1,
+      1
+     ],
+     "third": [
+      1,
+      1,
+      7,
+      4
+     ],
+     "points": 4
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026092486",
+    "day": 2,
+    "race": 3,
+    "axis": 4,
+    "axis_name": "入田龍馬",
+    "partners": [
+     7,
+     3
+    ],
+    "bet": "4→7,3 (2車単 2位軸)",
+    "score": 13.34,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      3
+     ],
+     "third": [
+      7,
+      3,
+      1,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026092486",
+    "day": 2,
+    "race": 1,
+    "axis": 5,
+    "axis_name": "尾崎勝弘",
+    "partners": [
+     3,
+     4
+    ],
+    "bet": "5→3,4 (2車単 2位軸)",
+    "score": 10.18,
+    "tri": {
+     "first": 5,
+     "second": [
+      3,
+      4
+     ],
+     "third": [
+      3,
+      4,
+      2,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026092486",
+    "day": 2,
+    "race": 8,
+    "axis": 1,
+    "axis_name": "吉岡篤志",
+    "partners": [
+     4,
+     5
+    ],
+    "bet": "1→4,5 (2車単 2位軸)",
+    "score": 9.84,
+    "tri": {
+     "first": 1,
+     "second": [
+      4,
+      5
+     ],
+     "third": [
+      4,
+      5,
+      3,
+      7
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
