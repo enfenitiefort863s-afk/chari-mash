@@ -130,3 +130,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260924-honmei-kawasaki-5,20260924,20:04,honmei,川崎,kawasaki,5,1,近藤雄太,2-3-4,21.75,2,2,1,3,差,0,300,0,ok,0,600,0
 20260924-honmei-kawasaki-6,20260924,20:04,honmei,川崎,kawasaki,6,1,松本悠平,4-5-6,20.05,1,1,2,3,逃,0,300,0,ok,0,600,0
 20260924-honmei-yahiko-6,20260924,20:04,honmei,弥彦,yahiko,6,1,才迫勇馬,2-4-7,19.03,1,1,2,4,逃,1,300,160,ok,1,600,220
+20260924-honmei-yahiko-7,20260924,11:06,honmei,弥彦,yahiko,7,1,吉川敬介,4-2-3,24.21,1,1,4,2,逃,1,300,140,ok,1,600,200
