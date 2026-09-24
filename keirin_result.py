@@ -1,15 +1,19 @@
 # レース結果を集計して、的中率・回収率をLINEに報告する
 import keirin_web as kw
 from keirin_line import send_line
-from keirin_track import build_report, process_pending
+from keirin_track import build_report, has_today_rows, process_pending
 
 
 def main():
     rows = process_pending()
-    if not rows:
-        print("新しく判定できるレースはありませんでした")
+    print(f"{len(rows)}件を新しく判定しました" if rows else "新しく判定できるレースはありませんでした")
+
+    # 的中速報ですでに全部拾われていて「新しく判定するもの」が0件でも、
+    # 本日ぶんの記録があれば、1日の結果報告は必ず送る
+    if not rows and not has_today_rows():
+        print("本日ぶんの記録がまだ無いため、結果報告は送りません")
         return
-    print(f"{len(rows)}件を判定しました")
+
     text = build_report(rows)
     try:
         kw.publish(text, label="結果報告")
