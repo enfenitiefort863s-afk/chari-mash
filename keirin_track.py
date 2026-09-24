@@ -17,7 +17,7 @@ DATA_DIR = os.environ.get("DATA_DIR", "data")
 PICK_DIR = os.path.join(DATA_DIR, "picks")
 RESULT_CSV = os.path.join(DATA_DIR, "results.csv")
 FIELDS = ["pick_id", "date", "slot", "kind", "venue", "venue_key", "race",
-          "axis", "axis_name", "partners", "axis_finish", "first", "second", "third",
+          "axis", "axis_name", "partners", "score", "axis_finish", "first", "second", "third",
           "kimarite", "hit", "cost", "payout", "status",
           "t3_hit", "t3_cost", "t3_payout"]
 KIND_LABEL = {"honmei": "🎯本命", "ara": "🌪荒れ"}
@@ -44,6 +44,7 @@ def save_picks(honmei, ara, results):
                 "cup": m.group(1), "day": int(m.group(2)), "race": x["race"],
                 "axis": axis, "axis_name": (x["by_car"].get(axis) or {}).get("name", ""),
                 "partners": list(partners), "bet": bet,
+                "score": round(x.get(kind, 0.0), 2),   # 本命度/荒れ度のスコア(あとで学習に使う)
                 "tri": x.get(f"{kind}_tri"),
             })
     if not picks:
@@ -185,6 +186,7 @@ def evaluate(pick, res):
         "pick_id": pick["pick_id"], "date": pick["date"], "slot": pick["slot"],
         "kind": pick["kind"], "venue": pick["venue"], "venue_key": pick["venue_key"],
         "race": pick["race"], "axis": axis, "axis_name": pick.get("axis_name", ""),
+        "score": pick.get("score", ""),
         "partners": "-".join(map(str, partners)),
         "axis_finish": orders.get(axis) or 0,
         "first": first or "", "second": second or "", "third": third or "",
@@ -247,6 +249,7 @@ def process_pending():
                 "pick_id": p["pick_id"], "date": p["date"], "slot": p["slot"],
                 "kind": p["kind"], "venue": p["venue"], "venue_key": p["venue_key"],
                 "race": p["race"], "axis": p["axis"], "axis_name": p.get("axis_name", ""),
+                "score": p.get("score", ""),
                 "partners": "-".join(map(str, p["partners"])),
                 "axis_finish": 0, "first": "", "second": "", "third": "",
                 "kimarite": "", "hit": 0, "cost": 0, "payout": 0, "status": "no_result",
@@ -345,6 +348,12 @@ def build_alert(hits):
         out.append(f"🔗これまでの配信・結果はこちら\n{url}")
     out.append("※1日の結果は、23:40ごろの結果報告でまとめてお知らせします。")
     return "\n".join(out)
+
+
+def has_today_rows():
+    """本日ぶん(7:20台の実行なら前日ぶん)の記録が、すでに1件でもあるか"""
+    target_date = report_date_str(datetime.now(JST))
+    return any(r.get("date") == target_date for r in read_rows())
 
 
 def build_report(new_rows):
