@@ -143,3 +143,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260925-honmei-beppu-11,20260925,08:13,honmei,別府,beppu,11,4,半田誠,3-2-5,20.92,2,1,4,7,差,0,300,0,ok,0,600,0
 20260925-honmei-nara-1,20260925,20:04,honmei,奈良,nara,1,1,吉田彰久,3-5-2,25.22,1,1,3,5,差,1,300,180,ok,1,600,270
 20260925-ara-yahiko-1,20260925,20:04,ara,弥彦,yahiko,1,5,小野祐作,2-1,9.75,1,5,2,3,差,1,200,1550,ok,1,600,12330
+20260925-honmei-yahiko-2,20260925,20:04,honmei,弥彦,yahiko,2,1,大越啓介,4-5-3,13.96,1,1,7,4,差,0,300,0,ok,0,600,0
