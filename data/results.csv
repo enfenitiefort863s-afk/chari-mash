@@ -133,3 +133,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260924-honmei-yahiko-7,20260924,11:06,honmei,弥彦,yahiko,7,1,吉川敬介,4-2-3,24.21,1,1,4,2,逃,1,300,140,ok,1,600,200
 20260925-ara-komatsushima-2,20260925,08:13,ara,小松島,komatsushima,2,6,田村裕也,1-1,15.17,7,1,5,4,捲,0,200,0,ok,0,400,0
 20260925-ara-komatsushima-11,20260925,08:13,ara,小松島,komatsushima,11,3,蒔田英彦,7-5,16.36,3,2,5,3,捲,0,200,0,ok,0,600,0
+20260925-honmei-ito-2,20260925,08:13,honmei,伊東,ito,2,4,渡邊健,3-7-2,23.92,4,1,3,7,差,0,300,0,ok,0,600,0
+20260925-ara-beppu-1,20260925,08:13,ara,別府,beppu,1,5,尾崎勝弘,3-4,10.18,4,4,2,6,差,0,200,0,ok,0,600,0
