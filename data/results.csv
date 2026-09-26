@@ -165,3 +165,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260926-honmei-nara-3,20260926,20:04,honmei,奈良,nara,3,1,岡崎和久,4-5-2,18.24,1,1,4,5,差,1,300,200,ok,1,600,270
 20260926-honmei-yahiko-4,20260926,20:04,honmei,弥彦,yahiko,4,1,大薗宏,6-5-2,15.77,2,6,1,3,逃,0,300,0,ok,0,600,0
 20260926-ara-nara-4,20260926,20:04,ara,奈良,nara,4,5,柴田健,2-1,8.71,6,3,7,4,差,0,200,0,ok,0,600,0
+20260926-ara-kawasaki-5,20260926,20:04,ara,川崎,kawasaki,5,4,坂本英一,1-1,15.53,6,1,3,2,捲,0,200,0,ok,0,400,0
