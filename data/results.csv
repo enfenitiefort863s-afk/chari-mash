@@ -161,3 +161,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260926-ara-beppu-5,20260926,08:13,ara,別府,beppu,5,1,鶴淳志,5-2,10.85,2,7,1,4,差,0,200,0,ok,0,600,0
 20260926-honmei-gifu-9,20260926,08:13,honmei,岐阜,gifu,9,7,松谷秀幸,3-2-1,16.22,2,3,7,9,逃,0,300,0,ok,0,600,0
 20260926-ara-gifu-12,20260926,08:13,ara,岐阜,gifu,12,8,山崎賢人,2-7,14.8,6,1,7,3,捲,0,200,0,ok,0,600,0
+20260926-honmei-kawasaki-1,20260926,20:04,honmei,川崎,kawasaki,1,1,加藤昌平,2-5-3,19.82,2,4,1,3,捲,0,300,0,ok,0,600,0
