@@ -189,3 +189,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260927-ara-iwakidaira-4,20260927,19:23,ara,いわき平,iwakidaira,4,1,秋本耀太郎,2-3,4.88,1,1,2,5,捲,1,200,460,ok,1,600,1680
 20260927-ara-iwakidaira-5,20260927,19:23,ara,いわき平,iwakidaira,5,1,菅谷隆司,2-3,4.76,1,1,3,2,差,1,200,2660,ok,1,600,3910
 20260927-honmei-iwakidaira-6,20260927,19:23,honmei,いわき平,iwakidaira,6,1,高本和也,2-3-4,10.01,1,1,2,3,捲,1,300,260,ok,1,600,480
+20260927-ara-tamano-7,20260927,19:23,ara,玉野,tamano,7,2,高橋義秋,1-3,5.11,2,1,2,3,差,0,200,0,ok,0,600,0
+20260927-honmei-iwakidaira-8,20260927,20:04,honmei,いわき平,iwakidaira,8,1,岩辺陸,2-3-5,9.49,3,2,4,1,差,0,300,0,ok,0,600,0
