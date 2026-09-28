@@ -205,3 +205,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260928-honmei-gifu-9,20260928,08:13,honmei,岐阜,gifu,9,5,嘉永泰斗,9-2-3,25.05,1,5,9,1,逃,1,300,190,ok,0,600,0
 20260928-honmei-iwakidaira-2,20260928,20:05,honmei,いわき平,iwakidaira,2,1,藤田まりあ,2-3-4,14.52,1,1,2,3,差,1,300,190,ok,1,600,260
 20260928-honmei-tamano-3,20260928,20:05,honmei,玉野,tamano,3,1,魚屋周成,2-4-3,16.04,1,2,,3,差,0,300,0,ok,0,600,0
+20260928-honmei-tamano-4,20260928,20:05,honmei,玉野,tamano,4,1,野上竜太,2-4-3,22.41,4,5,3,4,差,0,300,0,ok,0,600,0
+20260928-ara-iwakidaira-4,20260928,20:05,ara,いわき平,iwakidaira,4,2,鳥海創,1-5,6.22,2,6,2,4,差,0,200,0,ok,0,600,0
