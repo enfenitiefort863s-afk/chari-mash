@@ -202,3 +202,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260928-honmei-takeo-12,20260928,08:13,honmei,武雄,takeo,12,7,山田庸平,1-4-3,25.07,1,7,1,3,差,1,300,120,ok,1,600,700
 20260928-honmei-hiratsuka-4,20260928,08:13,honmei,平塚,hiratsuka,4,4,篠原輝利,5-1-2,22.95,1,4,5,1,逃,1,300,130,ok,1,600,140
 20260928-ara-gifu-6,20260928,08:13,ara,岐阜,gifu,6,9,友定祐己,1-3,15.27,7,3,1,4,差,0,200,0,ok,0,600,0
+20260928-honmei-gifu-9,20260928,08:13,honmei,岐阜,gifu,9,5,嘉永泰斗,9-2-3,25.05,1,5,9,1,逃,1,300,190,ok,0,600,0
