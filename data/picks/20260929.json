@@ -1,0 +1,312 @@
+[
+ {
+  "time": "08:14",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026092643",
+    "day": 4,
+    "race": 6,
+    "axis": 5,
+    "axis_name": "川口公太朗",
+    "partners": [
+     7,
+     1,
+     9
+    ],
+    "bet": "5→7,1,9 (2車単 軸流し)",
+    "score": 19.35,
+    "tri": {
+     "first": 5,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      9,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "平塚",
+    "venue_key": "hiratsuka",
+    "cup": "2026092835",
+    "day": 2,
+    "race": 3,
+    "axis": 1,
+    "axis_name": "篠原輝利",
+    "partners": [
+     4,
+     3,
+     5
+    ],
+    "bet": "1→4,3,5 (2車単 軸流し)",
+    "score": 18.86,
+    "tri": {
+     "first": 1,
+     "second": [
+      4,
+      3
+     ],
+     "third": [
+      4,
+      3,
+      5,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026092784",
+    "day": 3,
+    "race": 2,
+    "axis": 4,
+    "axis_name": "古川貴之",
+    "partners": [
+     1,
+     5,
+     7
+    ],
+    "bet": "4→1,5,7 (2車単 軸流し)",
+    "score": 17.5,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      5
+     ],
+     "third": [
+      1,
+      5,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "平塚",
+    "venue_key": "hiratsuka",
+    "cup": "2026092835",
+    "day": 2,
+    "race": 5,
+    "axis": 5,
+    "axis_name": "梅川風子",
+    "partners": [
+     2,
+     6,
+     7
+    ],
+    "bet": "5→2,6,7 (2車単 軸流し)",
+    "score": 17.23,
+    "tri": {
+     "first": 5,
+     "second": [
+      2,
+      6
+     ],
+     "third": [
+      2,
+      6,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026092784",
+    "day": 3,
+    "race": 6,
+    "axis": 2,
+    "axis_name": "原誠宏",
+    "partners": [
+     7,
+     6,
+     5
+    ],
+    "bet": "2→7,6,5 (2車単 軸流し)",
+    "score": 16.93,
+    "tri": {
+     "first": 2,
+     "second": [
+      7,
+      6
+     ],
+     "third": [
+      7,
+      6,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026092643",
+    "day": 4,
+    "race": 12,
+    "axis": 2,
+    "axis_name": "松浦悠士",
+    "partners": [
+     6,
+     9
+    ],
+    "bet": "2→6,9 (2車単 番手狙い)",
+    "score": 17.99,
+    "tri": {
+     "first": 2,
+     "second": [
+      6,
+      9
+     ],
+     "third": [
+      6,
+      9,
+      7,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026092643",
+    "day": 4,
+    "race": 4,
+    "axis": 2,
+    "axis_name": "不破将登",
+    "partners": [
+     4,
+     3
+    ],
+    "bet": "2→4,3 (2車単 番手狙い)",
+    "score": 17.19,
+    "tri": {
+     "first": 2,
+     "second": [
+      4,
+      3
+     ],
+     "third": [
+      4,
+      3,
+      7,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026092643",
+    "day": 4,
+    "race": 9,
+    "axis": 7,
+    "axis_name": "山形一気",
+    "partners": [
+     1,
+     5
+    ],
+    "bet": "7→1,5 (2車単 番手狙い)",
+    "score": 15.87,
+    "tri": {
+     "first": 7,
+     "second": [
+      1,
+      5
+     ],
+     "third": [
+      1,
+      5,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026092784",
+    "day": 3,
+    "race": 9,
+    "axis": 5,
+    "axis_name": "山口貴弘",
+    "partners": [
+     1,
+     1
+    ],
+    "bet": "5→1,1 (2車単 番手狙い)",
+    "score": 13.14,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      1
+     ],
+     "third": [
+      1,
+      1,
+      7,
+      4
+     ],
+     "points": 4
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026092643",
+    "day": 4,
+    "race": 8,
+    "axis": 5,
+    "axis_name": "和田圭",
+    "partners": [
+     3,
+     9
+    ],
+    "bet": "5→3,9 (2車単 番手狙い)",
+    "score": 11.01,
+    "tri": {
+     "first": 5,
+     "second": [
+      3,
+      9
+     ],
+     "third": [
+      3,
+      9,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
