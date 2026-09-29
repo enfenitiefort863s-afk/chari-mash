@@ -562,5 +562,131 @@
     }
    }
   ]
+ },
+ {
+  "time": "20:05",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026092761",
+    "day": 3,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "野上竜太",
+    "partners": [
+     2,
+     5,
+     3
+    ],
+    "bet": "1→2,5,3 (2車単 軸流し)",
+    "score": 18.65,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      3,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026092761",
+    "day": 3,
+    "race": 5,
+    "axis": 5,
+    "axis_name": "下沖功児",
+    "partners": [
+     1,
+     2
+    ],
+    "bet": "5→1,2 (2車単 2位軸)",
+    "score": 9.27,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026092761",
+    "day": 3,
+    "race": 6,
+    "axis": 1,
+    "axis_name": "西村豊",
+    "partners": [
+     2,
+     3
+    ],
+    "bet": "1→2,3 (2車単 2位軸)",
+    "score": 8.68,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026092761",
+    "day": 3,
+    "race": 1,
+    "axis": 3,
+    "axis_name": "渡部遥",
+    "partners": [
+     1,
+     2
+    ],
+    "bet": "3→1,2 (2車単 2位軸)",
+    "score": 8.56,
+    "tri": {
+     "first": 3,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
