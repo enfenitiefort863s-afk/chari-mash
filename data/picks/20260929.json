@@ -496,5 +496,71 @@
     }
    }
   ]
+ },
+ {
+  "time": "19:37",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026092761",
+    "day": 3,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "野上竜太",
+    "partners": [
+     2,
+     5,
+     3
+    ],
+    "bet": "1→2,5,3 (2車単 軸流し)",
+    "score": 18.65,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      3,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026092643",
+    "day": 4,
+    "race": 12,
+    "axis": 2,
+    "axis_name": "松浦悠士",
+    "partners": [
+     6,
+     9
+    ],
+    "bet": "2→6,9 (2車単 番手狙い)",
+    "score": 17.99,
+    "tri": {
+     "first": 2,
+     "second": [
+      6,
+      9
+     ],
+     "third": [
+      6,
+      9,
+      7,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
