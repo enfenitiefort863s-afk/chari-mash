@@ -281,18 +281,30 @@ def stats(rows):
     }
 
 
+def roi_mark(roi):
+    """回収率が黒字(100%以上)かで、パッと見て分かる印を付ける"""
+    if roi is None:
+        return "・"
+    return "🟢" if roi >= 100 else ("🟡" if roi >= 70 else "🔴")
+
+
 def fmt_stats(label, s):
     def pct(a, b):
         return f"{a * 100 / b:.0f}%" if b else "-"
-    roi = f"{s['pay'] * 100 / s['cost']:.0f}%" if s["cost"] else "-"
-    text = (f"{label} {s['n']}件\n"
-            f"　軸1着 {s['win']}件({pct(s['win'], s['n'])}) / 3着内 {s['top3']}件\n"
-            f"　2車単的中 {s['hit']}件({pct(s['hit'], s['n'])}) / 回収率 {roi}")
+
+    roi = (s["pay"] * 100 / s["cost"]) if s["cost"] else None
+    roi_txt = f"{roi:.0f}%" if roi is not None else "-"
+    lines = [
+        f"【{label}】{s['n']}件",
+        f"{roi_mark(roi)} 回収率 {roi_txt}　的中 {s['hit']}/{s['n']}({pct(s['hit'], s['n'])})",
+        f"　軸1着 {s['win']}件 / 3着内 {s['top3']}件",
+    ]
     if s["t3_n"]:
-        roi3 = f"{s['t3_pay'] * 100 / s['t3_cost']:.0f}%" if s["t3_cost"] else "-"
-        text += (f"\n　3連単的中 {s['t3_hit']}件({pct(s['t3_hit'], s['t3_n'])}) / 回収率 {roi3}"
-                 f"(記録{s['t3_n']}件)")
-    return text
+        roi3 = (s["t3_pay"] * 100 / s["t3_cost"]) if s["t3_cost"] else None
+        roi3_txt = f"{roi3:.0f}%" if roi3 is not None else "-"
+        lines.append(f"{roi_mark(roi3)} 3連単回収率 {roi3_txt}　的中 {s['t3_hit']}/{s['t3_n']}"
+                     f"({pct(s['t3_hit'], s['t3_n'])})")
+    return "\n".join(lines)
 
 
 def pickup_riders(rows, limit=3):
@@ -348,6 +360,24 @@ def build_alert(hits):
         out.append(f"🔗これまでの配信・結果はこちら\n{url}")
     out.append("※1日の結果は、23:40ごろの結果報告でまとめてお知らせします。")
     return "\n".join(out)
+
+
+LAST_REPORT_PATH = os.path.join(DATA_DIR, "last_report.json")
+
+
+def already_reported(date_str):
+    """その日の結果報告を、すでに送信済みか"""
+    try:
+        with open(LAST_REPORT_PATH, encoding="utf-8") as f:
+            return json.load(f).get("date") == date_str
+    except Exception:
+        return False
+
+
+def mark_reported(date_str):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(LAST_REPORT_PATH, "w", encoding="utf-8") as f:
+        json.dump({"date": date_str}, f)
 
 
 def has_today_rows():
