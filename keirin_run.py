@@ -12,7 +12,7 @@ from keirin_track import save_picks
 
 VENUES = [v.strip() for v in (os.environ.get("VENUES") or "").split(",") if v.strip()]
 SESSION = os.environ.get("SESSION") or "all"   # day:通常開催のみ / midnight:ミッドナイトのみ / all:両方
-N_PICKS = int(os.environ.get("N_PICKS") or 5)  # 本命・荒れ、それぞれ何レース選ぶか
+N_PICKS = int(os.environ.get("N_PICKS") or 3)  # 本命・荒れ、それぞれ何レース選ぶか(絞り込み優先で少なめ)
 
 
 # ---------------- 選手ページの取得(上位選手だけ) ----------------
@@ -49,17 +49,23 @@ def enrich_top(races, top=5):
             r["rel"] = k._REL_CACHE.get(pid, {})
 
 
+MIN_STARS = int(os.environ.get("MIN_STARS") or 4)   # 学習データが少ないうちから効く、最低限の星の数(絞り込み強め)
+
+
 def apply_min_score(honmei, ara):
-    """実際の的中率・回収率から学習したしきい値(あれば)で、自信の無いレースを間引く。
-    しきい値未満のものを全部外すと0件になる場合は、念のため一番上のものだけ残す"""
-    min_h = k.MIN_SCORE.get("honmei")
-    min_a = k.MIN_SCORE.get("ara")
-    if min_h is not None:
-        kept = [x for x in honmei if x["honmei"] >= min_h]
-        honmei = kept or honmei[:1]
-    if min_a is not None:
-        kept = [x for x in ara if x["ara"] >= min_a]
-        ara = kept or ara[:1]
+    """自信の無いレースを間引く。
+    1) 実際の的中率・回収率から学習したしきい値(60件たまってから有効)
+    2) それとは別に、星の数が一定未満のものは常に外す(データが少ないうちの安全弁)
+    どちらも、全部外すと0件になる場合は、念のため一番上のものだけ残す"""
+    def filter_by(xs, kind, min_learned):
+        kept = xs
+        if min_learned is not None:
+            kept = [x for x in kept if x[kind] >= min_learned]
+        kept2 = [x for x in kept if k.stars(x[kind]).count("★") >= MIN_STARS]
+        return kept2 or kept or xs[:1]
+
+    honmei = filter_by(honmei, "honmei", k.MIN_SCORE.get("honmei"))
+    ara = filter_by(ara, "ara", k.MIN_SCORE.get("ara"))
     return honmei, ara
 
 
