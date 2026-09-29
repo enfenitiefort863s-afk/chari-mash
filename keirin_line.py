@@ -356,6 +356,76 @@ VENUE_JP = {
 }
 
 
+VENUE_BANK = {   # (周長m, みなし直線m)。出典: 各競輪場公式コース案内(oddspark等)。
+    # 直線が長い/カントが緩いバンクほど差し・追い込みが決まりやすく、
+    # 直線が短い/カントがきついバンクほど先行・自在が決まりやすい傾向がある
+    "hakodate": (400, 51.3), "aomori": (400, 58.9), "iwakidaira": (400, 62.7),
+    "yahiko": (400, 63.1), "maebashi": (335, 46.6), "toride": (400, 54.8),
+    "utsunomiya": (500, 63.3), "omiya": (500, 66.7), "seibuen": (400, 47.6),
+    "keiokaku": (400, 51.5), "tachikawa": (400, 58.0), "matsudo": (333, 38.2),
+    "chiba": (500, 65.0), "kawasaki": (400, 58.0), "hiratsuka": (400, 54.2),
+    "odawara": (333, 36.1), "ito": (335, 46.6), "shizuoka": (400, 56.4),
+    "nagoya": (400, 58.8), "gifu": (400, 59.3), "ogaki": (400, 56.0),
+    "toyohashi": (400, 60.3), "toyama": (333, 43.0), "matsusaka": (400, 61.5),
+    "yokkaichi": (400, 62.4), "fukui": (400, 52.8), "nara": (400, 56.0),
+    "mukomachi": (400, 47.3), "wakayama": (400, 59.9), "kishiwada": (400, 56.7),
+    "tamano": (400, 47.9), "hiroshima": (400, 57.9), "hofu": (333, 42.5),
+    "takamatsu": (400, 54.8), "komatsushima": (400, 55.5), "kochi": (400, 56.0),
+    "matsuyama": (400, 58.6), "kokura": (400, 56.9), "kurume": (400, 50.7),
+    "takeo": (400, 64.4), "sasebo": (400, 40.2), "beppu": (400, 59.9),
+    "kumamoto": (500, 65.0),
+}
+BANK_AVG_STRAIGHT = {333: 42.0, 335: 42.0, 400: 56.0, 500: 65.0}   # 周長ごとの、みなし直線の目安平均
+
+
+def bank_bias(venue_key):
+    """このバンクが、先行型寄り(マイナス)か差し・追い込み型寄り(プラス)かを -1.0〜+1.0 で返す。
+    周長そのもの(333/335mは先行寄り、500mは差し寄り)を主要因とし、
+    同じ周長の中での直線の長さで微調整する。データが無い会場は 0.0(中立)"""
+    b = VENUE_BANK.get(venue_key)
+    if not b:
+        return 0.0
+    length, straight = b
+    base = {333: -0.35, 335: -0.35, 400: 0.0, 500: 0.35}.get(length, 0.0)
+    avg = BANK_AVG_STRAIGHT.get(length, 56.0)
+    extra = (straight - avg) / 30.0
+    return max(-1.0, min(1.0, base + extra))
+
+
+def bank_bonus(riders, venue_key):
+    """バンク適性による加点。逃げ型は先行有利バンクで、追い込み型は差し有利バンクで加点する。
+    決まり手の実績(自力/マーク)が多い選手ほど、恩恵・不利とも大きくする。
+    戻り値: ({車番: 加点}, [(重み, 説明), ...])"""
+    bias = bank_bias(venue_key)
+    if abs(bias) < 0.1:
+        return {}, []
+    bonus, notes = {}, []
+    for r in riders:
+        kyaku = r.get("脚")
+        if kyaku == "逃":
+            factor = min(1.5, 0.3 + 0.15 * jiriki_wins(r))
+            b = -bias * factor
+        elif kyaku == "追":
+            factor = min(1.5, 0.3 + 0.15 * follow_wins(r))
+            b = bias * factor
+        else:
+            b = bias * 0.3
+        b = round(b, 2)
+        if abs(b) >= 0.3:
+            bonus[r["車"]] = b
+    if bonus:
+        top_car = max(bonus, key=lambda c: bonus[c])
+        if bonus[top_car] > 0:
+            notes.append(("bank", bonus[top_car],
+                          f"直線が長め・差し追い込み向きのバンク、{circ(top_car)}{name_of({r['車']: r for r in riders}, top_car)}に追い風"))
+        elif min(bonus.values()) < 0 and bank_bias(venue_key) < 0:
+            lead = [r for r in riders if r.get("脚") == "逃"]
+            if lead:
+                notes.append(("bank", abs(bias),
+                              f"直線が短め・先行向きのバンク、{circ(lead[0]['車'])}{lead[0]['name']}が残しやすい"))
+    return bonus, notes
+
+
 VENUE_PREF = {   # 会場の都道府県(選手の登録地と同じ表記。地元選手の判定に使う)
     "hakodate": "北海道", "aomori": "青森", "iwakidaira": "福島",
     "yahiko": "新潟", "maebashi": "群馬", "toride": "茨城",
@@ -484,10 +554,13 @@ def name_of(by_car, car):
 
 
 def is_girls_race(race, riders):
-    """ガールズケイリンか(ラインが無く、個人の力量と作戦で決まる)"""
+    """ガールズケイリンか(規則上ラインを組めず、個人の力量と作戦だけで決まる)。
+    級班の読み取りミスで1人だけ誤って判定されても全体がガールズ扱いにならないよう、
+    半数以上がL1級のときだけガールズと判定する"""
     if "ガールズ" in (race.get("title") or ""):
         return True
-    return any(str(r.get("grade") or "").startswith("L") for r in riders)
+    n_l1 = sum(1 for r in riders if str(r.get("grade") or "") == "L1")
+    return n_l1 * 2 >= len(riders)
 
 
 def jiriki_wins(r):
@@ -576,12 +649,14 @@ def position_bonus(lines, by_car, local_pref, weights):
 
 
 def pick_notes(notes, limit=3):
-    """展開メモを最大limit個。地元番手と飛びつきを優先し、残りは加点の大きい順"""
+    """展開メモを最大limit個。地元番手・飛びつき・車番隣接・バンク適性を優先し、残りは加点の大きい順"""
+    bank = sorted((n for n in notes if n[0] == "bank"), key=lambda n: -n[1])[:1]
     local = sorted((n for n in notes if n[0] == "local"), key=lambda n: -n[1])[:1]
     jump = sorted((n for n in notes if n[0] == "jump"), key=lambda n: -n[1])[:1]
+    adjacent = sorted((n for n in notes if n[0] == "adjacent"), key=lambda n: -n[1])[:1]
     follow = sorted((n for n in notes if n[0] == "follow"), key=lambda n: -n[1])
-    follow = follow[:max(0, limit - len(local) - len(jump))]
-    return [n[2] for n in follow + local + jump]
+    follow = follow[:max(0, limit - len(bank) - len(local) - len(jump) - len(adjacent))]
+    return [n[2] for n in follow + local + jump + adjacent + bank]
 
 
 def girls_compare(riders, n=3):
@@ -597,12 +672,67 @@ def girls_compare(riders, n=3):
             parts.append(f"差し・マーク勝ち{m}")
         fm = r.get("form")
         if fm and fm["n"] >= 3:
-            parts.append(f"直近平均{fm['avg']:.1f}着")
+            mood = "↗上り調子" if fm["trend"] >= 1.0 else ("↘下り調子" if fm["trend"] <= -1.0 else "")
+            parts.append(f"直近平均{fm['avg']:.1f}着{mood}")
         elif r.get("3連対率"):
             parts.append(f"3連対{r['3連対率']}%")
+        pb = r.get("pos_bonus") or 0
+        if pb >= 0.3:
+            parts.append(f"車番隣接+{pb:.1f}")
         style = r.get("脚", "")
         out.append((f"{circ(r['車'])} {r['name']}" + (f"({style})" if style else ""), " / ".join(parts)))
     return out
+
+
+def girls_adjacency_bonus(riders):
+    """ガールズ: ラインが無い分、有力選手(評価トップ)に車番が近い選手は、
+    枠入りの位置関係からその後ろについて『マーク』できる可能性が高くなる。
+    本人のマークの上手さ(差し・マークの実績)が高いほど、恩恵を大きくする。
+    戻り値: ({車番: 加点}, [(重み, 説明), ...])"""
+    if len(riders) < 2:
+        return {}, []
+    ace = max(riders, key=lambda r: r["rating"])
+    bonus, notes = {}, []
+    for r in riders:
+        if r is ace:
+            continue
+        dist = abs(r["車"] - ace["車"])
+        if dist == 1:
+            base = 1.0
+        elif dist == 2:
+            base = 0.4
+        else:
+            continue
+        mark_factor = 0.5 + min(1.0, follow_wins(r) * 0.15)   # マークが上手い選手ほど恩恵が大きい
+        b = round(base * mark_factor, 2)
+        if b >= 0.3:
+            bonus[r["車"]] = b
+            notes.append(("adjacent", b,
+                          f"{circ(r['車'])}{r['name']}が{circ(ace['車'])}{ace['name']}と車番隣接、マークのチャンス"))
+    return bonus, notes
+
+
+def cross_line_candidate(lines, by_car, exclude=()):
+    """複数ラインの先頭同士が拮抗しているとき、それぞれの番手が競り合って
+    抜け出す『交差決着』も候補にする。ライン決着だけに偏らないための保険"""
+    heads = []   # (先頭の評価点, ライン, 番手選手)
+    for ln in lines:
+        if len(ln) < 2:
+            continue
+        h, b = by_car.get(ln[0]), by_car.get(ln[1])
+        if h and b and ln[0] not in exclude and ln[1] not in exclude:
+            heads.append((h["rating"], ln, b))
+    if len(heads) < 2:
+        return None
+    heads.sort(key=lambda t: -t[0])
+    if heads[0][0] - heads[1][0] > 3.0:
+        return None   # 先頭の実力差がありすぎるなら、素直に強いほうのラインで決まりやすい
+    b1, b2 = heads[0][2], heads[1][2]
+    axis, other = (b1, b2) if b1["rating"] >= b2["rating"] else (b2, b1)
+    return {
+        "axis": axis["車"], "partner": other["車"],
+        "heads": (heads[0][1][0], heads[1][1][0]),
+    }
 
 
 def line_strength(ln, by_car):
@@ -615,9 +745,9 @@ def line_strength(ln, by_car):
 
 
 def flow_lines(lines, by_car, girls, riders, n_front, notes):
-    """展開予想を、短い文の並びにする"""
+    """展開予想を、短い文の並びにする(並び予想が無いレースは、個人の力量で書く)"""
     out = []
-    if girls:
+    if not lines:
         fr = [r for r in riders if r.get("脚") == "逃"][:3]
         if fr:
             out.append("ライン無し。" + "・".join(f"{circ(r['車'])}{r['name']}" for r in fr) + "の仕掛け次第")
@@ -657,7 +787,8 @@ def analyze(race):
         r["pos_bonus"] = 0.0
     by_car = {r["車"]: r for r in riders}
 
-    # ガールズはラインが無い。個人の力量(得点・決まり手・直近成績)だけで評価する
+    # ガールズは規則上ラインを組めないため、常にライン無し(個人の力量)で評価する。
+    # 男子は、実際にウィンチケットにある並び予想をそのまま使う(単騎だけの選手がいてもよい)
     lines = [] if girls else (race.get("lines") or [])
     pos_notes = []
     if lines:
@@ -667,6 +798,22 @@ def analyze(race):
             if car in by_car:
                 by_car[car]["pos_bonus"] = bb
                 by_car[car]["rating"] += bb
+    else:
+        # ラインが無いレース(ガールズなど)は、車番の近さ×マークの上手さで評価する
+        bonus, pos_notes = girls_adjacency_bonus(riders)
+        for car, bb in bonus.items():
+            if car in by_car:
+                by_car[car]["pos_bonus"] = bb
+                by_car[car]["rating"] += bb
+
+    # バンクの特性(直線の長さ)による適性。ラインの有無に関わらず、脚質に応じて加点する
+    bbonus, bnotes = bank_bonus(riders, race["venue"])
+    for car, bb in bbonus.items():
+        if car in by_car:
+            by_car[car]["pos_bonus"] = by_car[car].get("pos_bonus", 0.0) + bb
+            by_car[car]["rating"] += bb
+    pos_notes += bnotes
+
     riders.sort(key=lambda r: -r["rating"])
     sc = [r["rating"] for r in riders]      # 以降の計算は評価点で行う
     line_of = {c: i for i, ln in enumerate(lines) for c in ln}
@@ -684,13 +831,13 @@ def analyze(race):
     n_front = sum(1 for r in riders if r.get("脚") == "逃")
 
     # ---- 本命度・荒れ度(重みは仮。的中結果を見て調整する) ----
-    if girls:
+    if not lines:
         honmei = gap12 * 2.0 + gap14 * 0.5 - max(0, n_front - 2) * 1.0
         ara = (max(0, 10 - spread) + max(0, n_front - 2) * 1.5 + max(0, 3 - gap12))
     else:
         honmei = (gap12 * 2.0 + gap14 * 0.5
                   + (3 if same_line else 0)
-                  + (2 if len(top_line) >= 3 else 0)
+                  + (2 if len(top_line) >= 2 else 0)
                   - max(0, n_front - 1) * 1.5)
         ara = (max(0, 10 - spread)
                + max(0, n_lines - 3) * 2.0
@@ -701,14 +848,15 @@ def analyze(race):
     # ---- 理由タグ ----
     honmei_tags, ara_tags = [], []
     if girls:
-        honmei_tags.append("👩ガールズ(ライン無し・個人の力量)")
-        ara_tags.append("👩ガールズ(ライン無し・個人の力量)")
+        tag = "👩ガールズ(並びあり)" if lines else "👩ガールズ(ライン無し・個人の力量)"
+        honmei_tags.append(tag)
+        ara_tags.append(tag)
     if gap12 >= 3:
         honmei_tags.append(f"評価差{gap12:.1f}")
-    if not girls:
+    if lines:
         if same_line:
             honmei_tags.append("評価1・2位が同ライン")
-        elif len(top_line) >= 3:
+        elif len(top_line) >= 2:
             honmei_tags.append(f"{len(top_line)}車ライン")
     if n_front <= 1:
         honmei_tags.append("先行少なめ")
@@ -722,7 +870,7 @@ def analyze(race):
         ara_tags.append("評価団子")
 
     # ---- 買い目(本命向き): 評価1位を軸、同ラインと評価上位を相手 ----
-    if girls:
+    if not lines:
         partners = [r["車"] for r in riders[1:4]]
     else:
         partners = [c for c in top_line if c != top]
@@ -740,13 +888,18 @@ def analyze(race):
         bnt = by_car.get(ln[1]) if len(ln) >= 2 else None
         if h and bnt and h.get("脚") == "逃" and ln[1] != top:
             cands.append((bnt["rating"], ln[1], ln[0]))
+    cross = cross_line_candidate(lines, by_car) if lines else None
     if cands:
         _, ara_axis, front_axis = max(cands)
         ara_partners = [c for c in (front_axis, top) if c != ara_axis]
         ara_kind = "番手狙い"
+    elif cross:
+        ara_axis, front_axis = cross["axis"], None
+        ara_partners = [cross["partner"]]
+        ara_kind = "交差決着"
     else:
         fronts = [r for r in riders if r.get("脚") == "逃" and r["車"] != top]
-        if not girls and fronts and fronts[0]["車"] in line_of:
+        if lines and fronts and fronts[0]["車"] in line_of:
             ara_axis = fronts[0]["車"]      # 番手のいない(単騎の)先行選手そのものを狙う
             front_axis = ara_axis
             ara_partners = [c for c in (top,) if c != ara_axis] or [second]
@@ -755,20 +908,28 @@ def analyze(race):
             ara_axis = riders[1]["車"]
             ara_partners = [top, riders[2]["車"]]
             ara_kind = "2位軸"
+    ara_partners = [c for c in dict.fromkeys(ara_partners) if c != ara_axis]   # 重複・軸自身の混入を除く
     ara_bet = f"{ara_axis}→{','.join(map(str, ara_partners))} (2車単 {ara_kind})"
 
     # ---- 展開予想 ----
     notes_txt = pick_notes(pos_notes)
     base_flow = flow_lines(lines, by_car, girls, riders, n_front, notes_txt)
     honmei_flow = list(base_flow)
+    if cross and ara_kind != "交差決着":
+        h1, h2 = cross["heads"]
+        honmei_flow.append(f"{circ(h1)}・{circ(h2)}の先頭が拮抗、番手同士の交差決着にも注意")
     ara_line = None
     if ara_kind == "番手狙い" and front_axis:
         ara_line = f"{circ(ara_axis)}{name_of(by_car, ara_axis)}が{circ(front_axis)}の番手から差し・マークで抜け出す形"
+    elif ara_kind == "交差決着":
+        h1, h2 = cross["heads"]
+        ara_line = (f"{circ(h1)}と{circ(h2)}の先頭が拮抗、番手{circ(ara_axis)}・{circ(cross['partner'])}の"
+                   f"交差決着(ライン決着にならない可能性)")
     elif ara_kind == "先行狙い" and front_axis:
         ara_line = f"{circ(front_axis)}{name_of(by_car, front_axis)}が単騎で先行して粘る形"
     # 荒れ向きは、狙いの説明を先頭の次に置く(文の数を絞っても消えないように)
     ara_flow = base_flow[:1] + ([ara_line] if ara_line else []) + base_flow[1:]
-    if n_single >= 1 and not girls:
+    if n_single >= 1 and lines:
         ara_flow.append("単騎が展開をかき回す可能性")
 
     # ---- 3連単(軸→2着候補→3着候補のフォーメーション) ----
@@ -794,7 +955,7 @@ def analyze(race):
         "cup": race.get("cup"), "day": race.get("day"),
         "race": race["race"],
         "deadline": deadline_min(race.get("title")),
-        "girls": girls, "girls_cmp": girls_compare(riders) if girls else [],
+        "girls": girls, "girls_cmp": [] if lines else girls_compare(riders),
         "honmei": honmei, "ara": ara,
         "by_car": by_car, "lines": lines,
         "honmei_axis": top, "honmei_partners": partners,
@@ -912,7 +1073,7 @@ def race_block(x, kind, idx, level=3):
     out += ["", "📈展開予想"]
     for t in flow[:n_flow]:
         out += wrap_text("・" + t)
-    if x.get("girls") and x.get("girls_cmp") and level >= 1:
+    if x.get("girls_cmp") and level >= 1:
         out += ["", "📊力量比較(ライン無し)"]
         for title, detail in x["girls_cmp"]:
             out.append(title)
@@ -921,7 +1082,7 @@ def race_block(x, kind, idx, level=3):
     out += ["", "🎫3連単予想", "　" + tri_text(tri)]
     out += ["", "🎫2車単予想", f"　{circ(axis)}→{cs(partners)}"]
     out += ["", f"⭐総合評価 {stars(score)}", f"　{verdict}"]
-    if x.get("girls"):
+    if not x["lines"]:
         out += wrap_text("　個人の力量(得点・決まり手・直近成績)の総合", indent="　")
     if reason:
         out += wrap_text(f"　({reason})", indent="　")
