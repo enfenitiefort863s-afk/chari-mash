@@ -104,14 +104,22 @@ def main():
 
     url = k.page_url()
     full_text = k.build_message(honmei, ara, level=3, enforce_limit=False)   # ページ用(フル)
-    short_text = k.build_short_message(honmei, ara, url)                    # LINE用(短縮)
+
+    # 件数が少なく、フル版がLINEの上限に収まるなら、そのままLINEに送る。
+    # 収まらない日だけ、短縮版(おすすめ一覧+URL)にする
+    if k.line_len(full_text) <= k.LINE_LIMIT:
+        line_text = full_text
+        print(f"フル版がLINEの上限に収まるため、そのまま送信します({k.line_len(full_text)}文字)")
+    else:
+        line_text = k.build_short_message(honmei, ara, url)
+        print(f"フル版が長すぎるため、短縮版+URLで送信します(フル版{k.line_len(full_text)}文字)")
 
     try:
         kw.publish(full_text, label="予想配信")
     except Exception as e:
         print("ページの更新に失敗(LINE配信は続けます):", e)
     try:
-        send_line(short_text)
+        send_line(line_text)
     except Exception as e:
         print("LINE送信に失敗しました(ページには反映済みです):", e)
 
