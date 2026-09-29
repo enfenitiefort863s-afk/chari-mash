@@ -219,3 +219,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20260929-honmei-hiratsuka-3,20260929,08:14,honmei,平塚,hiratsuka,3,1,篠原輝利,4-3-5,18.86,1,1,7,4,逃,0,300,0,ok,0,600,0
 20260929-ara-gifu-4,20260929,08:14,ara,岐阜,gifu,4,2,不破将登,4-3,17.19,1,2,5,9,捲,0,200,0,ok,0,600,0
 20260929-honmei-hiratsuka-5,20260929,08:14,honmei,平塚,hiratsuka,5,5,梅川風子,2-6-7,17.23,1,5,2,7,捲,1,300,170,ok,1,600,380
+20260929-honmei-gifu-6,20260929,08:14,honmei,岐阜,gifu,6,5,川口公太朗,7-1-9,19.35,1,5,7,4,差,1,300,530,ok,0,600,0
