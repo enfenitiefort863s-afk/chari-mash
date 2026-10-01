@@ -1,0 +1,156 @@
+[
+ {
+  "time": "08:13",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "松阪",
+    "venue_key": "matsusaka",
+    "cup": "2026100147",
+    "day": 2,
+    "race": 12,
+    "axis": 1,
+    "axis_name": "郡司浩平",
+    "partners": [
+     5,
+     9,
+     7
+    ],
+    "bet": "1→5,9,7 (2車単 軸流し)",
+    "score": 20.14,
+    "tri": {
+     "first": 1,
+     "second": [
+      5,
+      9
+     ],
+     "third": [
+      5,
+      9,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "大宮",
+    "venue_key": "omiya",
+    "cup": "2026100125",
+    "day": 2,
+    "race": 8,
+    "axis": 1,
+    "axis_name": "山本伸一",
+    "partners": [
+     5,
+     4,
+     7
+    ],
+    "bet": "1→5,4,7 (2車単 軸流し)",
+    "score": 20.12,
+    "tri": {
+     "first": 1,
+     "second": [
+      5,
+      4
+     ],
+     "third": [
+      5,
+      4,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "久留米",
+    "venue_key": "kurume",
+    "cup": "2026100183",
+    "day": 2,
+    "race": 8,
+    "axis": 7,
+    "axis_name": "枝村弘樹",
+    "partners": [
+     1,
+     5,
+     2
+    ],
+    "bet": "7→1,5,2 (2車単 軸流し)",
+    "score": 19.49,
+    "tri": {
+     "first": 7,
+     "second": [
+      1,
+      5
+     ],
+     "third": [
+      1,
+      5,
+      2,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "川崎",
+    "venue_key": "kawasaki",
+    "cup": "2026100134",
+    "day": 2,
+    "race": 7,
+    "axis": 7,
+    "axis_name": "西田雅志",
+    "partners": [
+     1
+    ],
+    "bet": "7→1 (2車単 番手狙い)",
+    "score": 17.42,
+    "tri": {
+     "first": 7,
+     "second": [
+      1
+     ],
+     "third": [
+      1,
+      5,
+      2,
+      4
+     ],
+     "points": 3
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "川崎",
+    "venue_key": "kawasaki",
+    "cup": "2026100134",
+    "day": 2,
+    "race": 4,
+    "axis": 4,
+    "axis_name": "関根健太郎",
+    "partners": [
+     1
+    ],
+    "bet": "4→1 (2車単 番手狙い)",
+    "score": 12.0,
+    "tri": {
+     "first": 4,
+     "second": [
+      1
+     ],
+     "third": [
+      1,
+      7,
+      5,
+      3
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
