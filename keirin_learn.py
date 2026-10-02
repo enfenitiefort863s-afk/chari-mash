@@ -7,7 +7,8 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from keirin_line import BASE, LEARN_KEYS, PRIOR_WEIGHTS, WORKERS, fetch
+import keirin_web as kw
+from keirin_line import BASE, LEARN_KEYS, PRIOR_WEIGHTS, VENUE_JP, WORKERS, fetch
 from keirin_track import DATA_DIR, LEARN_DIR, parse_result, read_rows
 
 MODEL_PATH = os.environ.get("MODEL_PATH") or os.path.join(DATA_DIR, "model.json")
@@ -34,24 +35,22 @@ def load_learn_rows(days=LOOKBACK_DAYS):
     return out
 
 
-def fetch_finish(row):
-    """レースキー(venue-cup-day-race)から結果ページを取り、1着の車番を返す"""
+def fetch_result(row):
+    """レースキー(venue-cup-day-race)から結果ページを取り、(1着の車番, 決まり手の文字) を返す"""
     try:
         venue, cup, day, race = row["k"].split("-", 3)
     except ValueError:
-        return None
+        return None, ""
     url = f"{BASE}/keirin/{venue}/raceresult/{cup}/{day}/{race}"
     html = fetch(url, retries=0)
     time.sleep(0.2)
     if not html:
-        return None
+        return None, ""
     res = parse_result(html)
     if not res:
-        return None
-    for car, o in res["orders"].items():
-        if o == 1:
-            return car
-    return None
+        return None, ""
+    first = next((car for car, o in res["orders"].items() if o == 1), None)
+    return first, res.get("kimarite", "")
 
 
 def learn_weights(keys, rows):
@@ -110,14 +109,79 @@ def tune_thresholds():
     return out
 
 
+# ---------------- 会場ごとの決まり手(戦術)の集計 ----------------
+KIMARITE_STATS_PATH = os.environ.get("KIMARITE_STATS_PATH") or os.path.join(DATA_DIR, "kimarite_stats.json")
+
+
+def classify_kimarite(kimarite, pos_label):
+    """決まり手の文字と、1着選手の並び予想での位置(先頭/番手/単騎)から、戦術を分類する。
+    『番手捲り』『飛びつき』は、ここで初めて区別する(ウィンチケットの決まり手は4種類だけのため)"""
+    k = (kimarite or "").strip()
+    if not k:
+        return "不明"
+    if "逃" in k:
+        return "逃げ"
+    if "捲" in k:
+        if pos_label == 2:
+            return "番手捲り"
+        if pos_label in (0, None):
+            return "単騎捲り"
+        return "先頭捲り"
+    if "差" in k:
+        if pos_label == 0:
+            return "飛びつき差し"       # 単騎だった選手が差して連対(飛びつきの近似)
+        return "差し"
+    if "マ" in k:
+        if pos_label == 0:
+            return "飛びつきマーク"     # 単騎だった選手がマークで連対(飛びつきの近似)
+        return "マーク"
+    return "不明"
+
+
+def update_kimarite_stats(rows, results):
+    """会場ごとに、戦術(逃げ/番手捲り/飛びつき等)の件数を積み上げて保存する"""
+    try:
+        with open(KIMARITE_STATS_PATH, encoding="utf-8") as f:
+            stats = json.load(f)
+    except Exception:
+        stats = {}
+    added = 0
+    for row, (first, kimarite) in zip(rows, results):
+        if first is None:
+            continue
+        venue = row.get("v") or row["k"].split("-", 1)[0]
+        pos_label = (row.get("pos") or {}).get(str(first), (row.get("pos") or {}).get(first))
+        tactic = classify_kimarite(kimarite, pos_label)
+        v = stats.setdefault(venue, {})
+        v[tactic] = v.get(tactic, 0) + 1
+        added += 1
+    stats["_updated"] = datetime_now_str()
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(KIMARITE_STATS_PATH, "w", encoding="utf-8") as f:
+        json.dump(stats, f, ensure_ascii=False, indent=1)
+    print(f"決まり手の集計を更新しました({added}件追加)")
+    try:
+        display = {VENUE_JP.get(v, v): counts for v, counts in stats.items() if v != "_updated"}
+        display["_updated"] = stats["_updated"]
+        kw.publish_stats(display)
+    except Exception as e:
+        print("決まり手グラフのページ更新に失敗(集計自体は保存済み):", e)
+
+
+def datetime_now_str():
+    from datetime import datetime, timezone, timedelta
+    return datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M")
+
+
 def main():
     rows = load_learn_rows()
     print(f"学習データ候補 {len(rows)}レース")
     men_rows, girls_rows = [], []
+    results = []
     if rows:
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-            finishes = list(ex.map(fetch_finish, rows))
-        for row, first in zip(rows, finishes):
+            results = list(ex.map(fetch_result, rows))
+        for row, (first, kimarite) in zip(rows, results):
             if first is None:
                 continue
             (girls_rows if row.get("g") else men_rows).append((row, first))
@@ -145,6 +209,9 @@ def main():
         print("スコアのしきい値を更新しました:", thresholds)
     else:
         print("しきい値の学習には、まだ判定済みのレースが足りません")
+
+    if rows and results:
+        update_kimarite_stats(rows, results)
 
     if not model:
         print("更新できるものがありませんでした")
