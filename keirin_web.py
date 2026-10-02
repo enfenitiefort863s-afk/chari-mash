@@ -41,10 +41,27 @@ def publish(texts, label=""):
         entries.append({"time": now.strftime("%m/%d %H:%M"), "label": label, "text": t})
     entries = entries[-MAX_ENTRIES:]
     _save_log(entries)
-    _encrypt_and_write(entries)
+    _encrypt_and_write(entries, "data.json")
+    _ensure_shell()
 
 
-def _encrypt_and_write(entries):
+def publish_stats(stats):
+    """会場ごとの決まり手(戦術)の集計を、ページ用に暗号化して書き出す"""
+    _encrypt_and_write(stats, "stats.json")
+    _ensure_shell()
+
+
+def _ensure_shell():
+    os.makedirs(DOCS_DIR, exist_ok=True)
+    shell = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_shell.html")
+    if os.path.exists(shell):
+        shutil.copy(shell, os.path.join(DOCS_DIR, "index.html"))
+    nojekyll = os.path.join(DOCS_DIR, ".nojekyll")
+    if not os.path.exists(nojekyll):
+        open(nojekyll, "w").close()
+
+
+def _encrypt_and_write(obj, filename):
     password = os.environ.get("PAGE_PASSWORD")
     if not password:
         print("PAGE_PASSWORD が未設定のため、ページの更新はスキップします")
@@ -61,7 +78,7 @@ def _encrypt_and_write(entries):
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100_000)
     key = kdf.derive(password.encode("utf-8"))
     iv = os.urandom(12)
-    plaintext = json.dumps(entries, ensure_ascii=False).encode("utf-8")
+    plaintext = json.dumps(obj, ensure_ascii=False).encode("utf-8")
     ciphertext = AESGCM(key).encrypt(iv, plaintext, None)   # 末尾にGCMの認証タグが付く(ブラウザ側と同じ形式)
 
     os.makedirs(DOCS_DIR, exist_ok=True)
@@ -71,13 +88,6 @@ def _encrypt_and_write(entries):
         "data": base64.b64encode(ciphertext).decode(),
         "updated": datetime.now(JST).strftime("%m/%d %H:%M"),
     }
-    with open(os.path.join(DOCS_DIR, "data.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(DOCS_DIR, filename), "w", encoding="utf-8") as f:
         json.dump(payload, f)
-
-    shell = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_shell.html")
-    if os.path.exists(shell):
-        shutil.copy(shell, os.path.join(DOCS_DIR, "index.html"))
-    nojekyll = os.path.join(DOCS_DIR, ".nojekyll")
-    if not os.path.exists(nojekyll):
-        open(nojekyll, "w").close()
-    print(f"ページを更新しました({len(entries)}件)")
+    print(f"{filename} を更新しました")
