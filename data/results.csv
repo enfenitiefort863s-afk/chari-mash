@@ -253,3 +253,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261002-honmei-matsusaka-12,20261002,08:13,honmei,松阪,matsusaka,12,1,郡司浩平,5-9-7,20.14,2,5,1,9,差,0,300,0,ok,0,600,0
 20261002-ara-kawasaki-4,20261002,08:13,ara,川崎,kawasaki,4,4,関根健太郎,1,12.0,4,3,5,1,捲,0,100,0,ok,0,300,0
 20261002-ara-kawasaki-7,20261002,08:13,ara,川崎,kawasaki,7,7,西田雅志,1,17.42,4,2,1,6,捲,0,100,0,ok,0,300,0
+20261002-honmei-kurume-8,20261002,08:13,honmei,久留米,kurume,8,7,枝村弘樹,1-5-2,19.49,6,5,1,3,差,0,300,0,ok,0,600,0
