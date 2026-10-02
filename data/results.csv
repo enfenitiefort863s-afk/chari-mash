@@ -257,3 +257,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261002-honmei-nara-3,20261002,20:04,honmei,奈良,nara,3,1,木曽田晃大,2-5-6,18.81,3,3,4,1,差,0,300,0,ok,0,600,0
 20261002-honmei-aomori-5,20261002,20:04,honmei,青森,aomori,5,1,菊地圭,2-3-4,14.04,1,1,4,2,差,1,300,290,ok,0,600,0
 20261002-honmei-nara-6,20261002,20:04,honmei,奈良,nara,6,1,近藤圭佑,2-3-4,23.46,3,4,3,1,差,0,300,0,ok,0,600,0
+20261002-ara-nara-7,20261002,20:04,ara,奈良,nara,7,2,佐藤和典,1,13.34,3,3,1,2,逃,0,100,0,ok,0,300,0
