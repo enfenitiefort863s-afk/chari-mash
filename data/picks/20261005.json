@@ -95,5 +95,163 @@
     }
    }
   ]
+ },
+ {
+  "time": "08:12",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026100553",
+    "day": 1,
+    "race": 12,
+    "axis": 1,
+    "axis_name": "和田健太郎",
+    "partners": [
+     7,
+     4,
+     5
+    ],
+    "bet": "1→7,4,5 (2車単 軸流し)",
+    "score": 23.07,
+    "tri": {
+     "first": 1,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "いわき平",
+    "venue_key": "iwakidaira",
+    "cup": "2026100413",
+    "day": 2,
+    "race": 6,
+    "axis": 4,
+    "axis_name": "山原さくら",
+    "partners": [
+     7,
+     6,
+     1
+    ],
+    "bet": "4→7,6,1 (2車単 軸流し)",
+    "score": 18.14,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      6
+     ],
+     "third": [
+      7,
+      6,
+      1,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "松山",
+    "venue_key": "matsuyama",
+    "cup": "2026100475",
+    "day": 2,
+    "race": 2,
+    "axis": 7,
+    "axis_name": "野上竜太",
+    "partners": [
+     2,
+     5,
+     3
+    ],
+    "bet": "7→2,5,3 (2車単 軸流し)",
+    "score": 17.44,
+    "tri": {
+     "first": 7,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松山",
+    "venue_key": "matsuyama",
+    "cup": "2026100475",
+    "day": 2,
+    "race": 7,
+    "axis": 7,
+    "axis_name": "岡光良",
+    "partners": [
+     3,
+     2
+    ],
+    "bet": "7→3,2 (2車単 番手狙い)",
+    "score": 19.68,
+    "tri": {
+     "first": 7,
+     "second": [
+      3,
+      2
+     ],
+     "third": [
+      3,
+      2,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026100553",
+    "day": 1,
+    "race": 1,
+    "axis": 2,
+    "axis_name": "栗田雄矢",
+    "partners": [
+     4,
+     5
+    ],
+    "bet": "2→4,5 (2車単 番手狙い)",
+    "score": 12.38,
+    "tri": {
+     "first": 2,
+     "second": [
+      4,
+      5
+     ],
+     "third": [
+      4,
+      5,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
