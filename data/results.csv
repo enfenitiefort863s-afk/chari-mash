@@ -271,3 +271,7 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261003-ara-takeo-7,20261003,20:59,ara,武雄,takeo,7,2,藤原憲征,5-1,12.42,6,4,6,3,捲,0,200,0,ok,0,600,0
 20261003-ara-komatsushima-7,20261003,20:59,ara,小松島,komatsushima,7,5,飯田辰哉,2-1,12.79,4,3,4,6,捲,0,200,0,ok,0,600,0
 20261004-ara-matsusaka-7,20261004,09:40,ara,松阪,matsusaka,7,9,清水剛志,2,14.1,6,7,2,3,差,0,100,0,ok,0,300,0
+20261004-honmei-iwakidaira-3,20261004,09:40,honmei,いわき平,iwakidaira,3,7,渡邉拓,2-4-3,25.03,1,7,2,5,差,1,300,140,ok,1,600,3600
+20261004-honmei-iwakidaira-4,20261004,09:40,honmei,いわき平,iwakidaira,4,5,角田吏,4-3-7,24.85,1,5,1,6,逃,0,300,0,ok,0,600,0
+20261004-ara-matsuyama-5,20261004,09:40,ara,松山,matsuyama,5,2,滝本泰行,7-1,16.66,2,7,2,5,捲,0,200,0,ok,0,600,0
+20261004-ara-matsuyama-6,20261004,09:40,ara,松山,matsuyama,6,2,大矢将大,4,13.58,6,3,5,4,差,0,100,0,ok,0,300,0
