@@ -154,6 +154,48 @@
     font-size: 13.5px;
     line-height: 1.75;
   }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin: 4px 4px 14px;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 0;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 700;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text-sub);
+  }
+  .tab.active { background: var(--lime); color: #14180a; border-color: var(--lime); }
+
+  .venue-block {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .venue-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    color: var(--text);
+  }
+  .venue-name .n { color: var(--text-faint); font-weight: 400; font-size: 11px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bar-label { width: 76px; flex-shrink: 0; font-size: 11px; color: var(--text-sub); }
+  .bar-track { flex: 1; background: var(--bg-elev); border-radius: 5px; overflow: hidden; height: 14px; }
+  .bar-fill { height: 100%; border-radius: 5px; background: var(--lime); }
+  .bar-fill.close { background: var(--orange); }
+  .bar-count { width: 28px; text-align: right; font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  .empty-note { color: var(--text-faint); font-size: 12.5px; text-align: center; padding: 30px 10px; }
 </style>
 </head>
 <body>
@@ -171,8 +213,13 @@
   </div>
 
   <div id="content">
+    <div class="tabs">
+      <div class="tab active" id="tabLog">ログ</div>
+      <div class="tab" id="tabChart">📊決まり手</div>
+    </div>
     <div id="updated"></div>
     <div id="list"></div>
+    <div id="chart" style="display:none"></div>
   </div>
 
 <script>
@@ -183,30 +230,80 @@ function toBytes(b64) {
   return arr;
 }
 
+async function decryptFile(filename, pw) {
+  const res = await fetch(filename, { cache: 'no-store' });
+  const payload = await res.json();
+  const salt = toBytes(payload.salt);
+  const iv = toBytes(payload.iv);
+  const data = toBytes(payload.data);
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(pw), { name: 'PBKDF2' }, false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
+  return { obj: JSON.parse(new TextDecoder().decode(plainBuf)), updated: payload.updated };
+}
+
 async function unlock() {
   const pw = document.getElementById('pw').value;
   const err = document.getElementById('err');
   err.textContent = '';
   if (!pw) return;
   try {
-    const res = await fetch('data.json', { cache: 'no-store' });
-    const payload = await res.json();
-    const salt = toBytes(payload.salt);
-    const iv = toBytes(payload.iv);
-    const data = toBytes(payload.data);
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw', enc.encode(pw), { name: 'PBKDF2' }, false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
-      keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
-    const entries = JSON.parse(new TextDecoder().decode(plainBuf));
-    render(entries, payload.updated);
+    const { obj: entries, updated } = await decryptFile('data.json', pw);
+    render(entries, updated);
     try { sessionStorage.setItem('pw', pw); } catch (e) {}
   } catch (e) {
     err.textContent = 'パスワードが違うか、データを読み込めませんでした';
+    return;
   }
+  try {
+    const { obj: stats } = await decryptFile('stats.json', pw);
+    renderChart(stats);
+  } catch (e) {
+    document.getElementById('chart').innerHTML = '<div class="empty-note">決まり手の集計データがまだありません</div>';
+  }
+}
+
+function renderChart(stats) {
+  const box = document.getElementById('chart');
+  box.innerHTML = '';
+  const venues = Object.keys(stats).filter(v => v !== '_updated');
+  if (!venues.length) {
+    box.innerHTML = '<div class="empty-note">決まり手の集計データがまだありません</div>';
+    return;
+  }
+  venues.sort((a, b) => {
+    const ta = Object.values(stats[a]).reduce((s, n) => s + n, 0);
+    const tb = Object.values(stats[b]).reduce((s, n) => s + n, 0);
+    return tb - ta;
+  });
+  venues.forEach(v => {
+    const counts = stats[v];
+    const total = Object.values(counts).reduce((s, n) => s + n, 0);
+    if (!total) return;
+    const max = Math.max(...Object.values(counts));
+    const block = document.createElement('div');
+    block.className = 'venue-block';
+    const title = document.createElement('div');
+    title.className = 'venue-name';
+    title.innerHTML = '<span>' + v + '競輪</span><span class="n">' + total + '件</span>';
+    block.appendChild(title);
+    Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([label, n]) => {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const close = label.includes('差し') || label.includes('マーク') || label.includes('飛びつき');
+      row.innerHTML =
+        '<div class="bar-label">' + label + '</div>' +
+        '<div class="bar-track"><div class="bar-fill' + (close ? ' close' : '') +
+          '" style="width:' + Math.round(n / max * 100) + '%"></div></div>' +
+        '<div class="bar-count">' + n + '</div>';
+      block.appendChild(row);
+    });
+    box.appendChild(block);
+  });
 }
 
 function render(entries, updated) {
@@ -244,6 +341,19 @@ function render(entries, updated) {
 
 document.getElementById('btn').addEventListener('click', unlock);
 document.getElementById('pw').addEventListener('keydown', ev => { if (ev.key === 'Enter') unlock(); });
+
+document.getElementById('tabLog').addEventListener('click', () => {
+  document.getElementById('tabLog').classList.add('active');
+  document.getElementById('tabChart').classList.remove('active');
+  document.getElementById('list').style.display = 'block';
+  document.getElementById('chart').style.display = 'none';
+});
+document.getElementById('tabChart').addEventListener('click', () => {
+  document.getElementById('tabChart').classList.add('active');
+  document.getElementById('tabLog').classList.remove('active');
+  document.getElementById('list').style.display = 'none';
+  document.getElementById('chart').style.display = 'block';
+});
 
 (function () {
   try {
