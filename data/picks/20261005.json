@@ -1,0 +1,99 @@
+[
+ {
+  "time": "02:22",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "平塚",
+    "venue_key": "hiratsuka",
+    "cup": "2026100335",
+    "day": 3,
+    "race": 5,
+    "axis": 1,
+    "axis_name": "西原裕太郎",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 16.63,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026100384",
+    "day": 3,
+    "race": 2,
+    "axis": 1,
+    "axis_name": "望月紀男",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 12.06,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小松島",
+    "venue_key": "komatsushima",
+    "cup": "2026100373",
+    "day": 3,
+    "race": 5,
+    "axis": 1,
+    "axis_name": "吉川嘉斗",
+    "partners": [
+     2,
+     3
+    ],
+    "bet": "1→2,3 (2車単 2位軸)",
+    "score": 12.96,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
