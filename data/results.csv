@@ -277,3 +277,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261004-ara-matsuyama-6,20261004,09:40,ara,松山,matsuyama,6,2,大矢将大,4,13.58,6,3,5,4,差,0,100,0,ok,0,300,0
 20261004-honmei-matsuyama-11,20261004,09:40,honmei,松山,matsuyama,11,7,福永大智,4-1-5,26.55,2,2,7,6,逃,0,300,0,ok,0,600,0
 20261005-ara-nara-1,20261005,08:12,ara,奈良,nara,1,2,栗田雄矢,4-5,12.38,4,1,5,3,逃,0,200,0,ok,0,600,0
+20261005-honmei-nara-12,20261005,08:12,honmei,奈良,nara,12,1,和田健太郎,7-4-5,23.07,3,3,5,1,捲,0,300,0,ok,0,600,0
+20261005-honmei-matsuyama-2,20261005,08:12,honmei,松山,matsuyama,2,7,野上竜太,2-5-3,17.44,2,5,7,3,差,0,300,0,ok,0,600,0
