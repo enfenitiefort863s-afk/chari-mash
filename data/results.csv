@@ -281,3 +281,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261005-honmei-matsuyama-2,20261005,08:12,honmei,松山,matsuyama,2,7,野上竜太,2-5-3,17.44,2,5,7,3,差,0,300,0,ok,0,600,0
 20261005-honmei-iwakidaira-6,20261005,08:12,honmei,いわき平,iwakidaira,6,4,山原さくら,7-6-1,18.14,1,4,5,2,捲,0,300,0,ok,0,600,0
 20261005-ara-matsuyama-7,20261005,08:12,ara,松山,matsuyama,7,7,岡光良,3-2,19.68,4,1,2,6,捲,0,200,0,ok,0,600,0
+20261005-honmei-komatsushima-1,20261005,20:06,honmei,小松島,komatsushima,1,1,貝原涼太,7-2-3,14.1,1,1,7,3,逃,1,300,340,ok,1,600,2090
