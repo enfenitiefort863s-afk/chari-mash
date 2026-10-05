@@ -1,0 +1,188 @@
+[
+ {
+  "time": "08:13",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026100553",
+    "day": 2,
+    "race": 12,
+    "axis": 5,
+    "axis_name": "和田健太郎",
+    "partners": [
+     1,
+     7,
+     3
+    ],
+    "bet": "5→1,7,3 (2車単 軸流し)",
+    "score": 28.13,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      3,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "松山",
+    "venue_key": "matsuyama",
+    "cup": "2026100475",
+    "day": 3,
+    "race": 7,
+    "axis": 4,
+    "axis_name": "磯島成介",
+    "partners": [
+     7,
+     3,
+     2
+    ],
+    "bet": "4→7,3,2 (2車単 軸流し)",
+    "score": 22.36,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      3
+     ],
+     "third": [
+      7,
+      3,
+      2,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "松山",
+    "venue_key": "matsuyama",
+    "cup": "2026100475",
+    "day": 3,
+    "race": 1,
+    "axis": 7,
+    "axis_name": "木村浩宣",
+    "partners": [
+     3,
+     1,
+     2
+    ],
+    "bet": "7→3,1,2 (2車単 軸流し)",
+    "score": 22.34,
+    "tri": {
+     "first": 7,
+     "second": [
+      3,
+      1
+     ],
+     "third": [
+      3,
+      1,
+      2,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026100553",
+    "day": 2,
+    "race": 8,
+    "axis": 4,
+    "axis_name": "小林潤二",
+    "partners": [
+     1,
+     2
+    ],
+    "bet": "4→1,2 (2車単 番手狙い)",
+    "score": 21.6,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      3,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松山",
+    "venue_key": "matsuyama",
+    "cup": "2026100475",
+    "day": 3,
+    "race": 6,
+    "axis": 4,
+    "axis_name": "荻原尚人",
+    "partners": [
+     7,
+     1
+    ],
+    "bet": "4→7,1 (2車単 番手狙い)",
+    "score": 18.01,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松山",
+    "venue_key": "matsuyama",
+    "cup": "2026100475",
+    "day": 3,
+    "race": 2,
+    "axis": 1,
+    "axis_name": "田中勝仁",
+    "partners": [
+     7
+    ],
+    "bet": "1→7 (2車単 番手狙い)",
+    "score": 14.17,
+    "tri": {
+     "first": 1,
+     "second": [
+      7
+     ],
+     "third": [
+      7,
+      3,
+      4,
+      2
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
