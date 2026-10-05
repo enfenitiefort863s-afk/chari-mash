@@ -2,9 +2,8 @@ name: keirin-alert
 
 on:
   schedule:
-    # 5分おき(JST 9:00〜24:59ごろ=UTC 0:00〜15:59)。的中したときだけLINEに送る
-    # 公開リポジトリはActionsの実行時間が無料・無制限なので、頻度を上げても費用はかからない
-    - cron: "*/5 0-15 * * *"
+    # 10分おき(JST 9:00〜24:59ごろ=UTC 0:00〜15:59)。的中したときだけLINEに送る
+    - cron: "*/10 0-15 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -12,7 +11,8 @@ permissions:
 
 concurrency:
   group: keirin-alert
-  cancel-in-progress: false
+  cancel-in-progress: true   # 待ち行列を作らず、常に最新のチェックを優先する(これが無いと、何かの理由で
+                              # 1回の実行が長引いたときに待ち行列が積み重なり、他の配信まで巻き込んで遅れる)
 
 jobs:
   alert:
