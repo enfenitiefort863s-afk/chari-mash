@@ -184,5 +184,189 @@
     }
    }
   ]
+ },
+ {
+  "time": "20:06",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "大垣",
+    "venue_key": "ogaki",
+    "cup": "2026100644",
+    "day": 1,
+    "race": 8,
+    "axis": 1,
+    "axis_name": "邊見竜馬",
+    "partners": [
+     2,
+     4,
+     3
+    ],
+    "bet": "1→2,4,3 (2車単 軸流し)",
+    "score": 26.87,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "大垣",
+    "venue_key": "ogaki",
+    "cup": "2026100644",
+    "day": 1,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "篠原輝利",
+    "partners": [
+     2,
+     5,
+     7
+    ],
+    "bet": "1→2,5,7 (2車単 軸流し)",
+    "score": 17.07,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "大垣",
+    "venue_key": "ogaki",
+    "cup": "2026100644",
+    "day": 1,
+    "race": 3,
+    "axis": 1,
+    "axis_name": "小川大地",
+    "partners": [
+     2,
+     5,
+     3
+    ],
+    "bet": "1→2,5,3 (2車単 軸流し)",
+    "score": 16.79,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      3,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "前橋",
+    "venue_key": "maebashi",
+    "cup": "2026100622",
+    "day": 1,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "蕗澤鴻太郎",
+    "partners": [
+     2,
+     3
+    ],
+    "bet": "1→2,3 (2車単 2位軸)",
+    "score": 10.37,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "大垣",
+    "venue_key": "ogaki",
+    "cup": "2026100644",
+    "day": 1,
+    "race": 7,
+    "axis": 3,
+    "axis_name": "小浦凪",
+    "partners": [
+     1
+    ],
+    "bet": "3→1 (2車単 番手狙い)",
+    "score": 8.62,
+    "tri": {
+     "first": 3,
+     "second": [
+      1
+     ],
+     "third": [
+      1,
+      2,
+      4,
+      5
+     ],
+     "points": 3
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "大垣",
+    "venue_key": "ogaki",
+    "cup": "2026100644",
+    "day": 1,
+    "race": 6,
+    "axis": 3,
+    "axis_name": "安部達也",
+    "partners": [
+     1
+    ],
+    "bet": "3→1 (2車単 番手狙い)",
+    "score": 7.11,
+    "tri": {
+     "first": 3,
+     "second": [
+      1
+     ],
+     "third": [
+      1,
+      2,
+      5,
+      4
+     ],
+     "points": 3
+    }
+   }
+  ]
  }
 ]
