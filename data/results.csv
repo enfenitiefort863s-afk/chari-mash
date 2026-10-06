@@ -293,3 +293,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261006-honmei-nara-12,20261006,08:13,honmei,奈良,nara,12,5,和田健太郎,1-7-3,28.13,3,3,6,5,捲,0,300,0,ok,0,600,0
 20261006-ara-matsuyama-6,20261006,08:13,ara,松山,matsuyama,6,4,荻原尚人,7-1,18.01,3,3,5,4,捲,0,200,0,ok,0,600,0
 20261006-honmei-matsuyama-7,20261006,08:13,honmei,松山,matsuyama,7,4,磯島成介,7-3-2,22.36,1,4,7,3,差,1,300,360,ok,1,600,1110
+20261006-honmei-ogaki-3,20261006,20:06,honmei,大垣,ogaki,3,1,小川大地,2-5-3,16.79,0,3,2,5,逃,0,300,0,ok,0,600,0
