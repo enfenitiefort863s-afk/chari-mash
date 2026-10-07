@@ -1,0 +1,158 @@
+[
+ {
+  "time": "08:12",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026100738",
+    "day": 2,
+    "race": 6,
+    "axis": 4,
+    "axis_name": "小野裕次",
+    "partners": [
+     7,
+     2,
+     5
+    ],
+    "bet": "4→7,2,5 (2車単 軸流し)",
+    "score": 20.99,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      2
+     ],
+     "third": [
+      7,
+      2,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026100738",
+    "day": 2,
+    "race": 11,
+    "axis": 5,
+    "axis_name": "菅原裕太",
+    "partners": [
+     1,
+     4,
+     7
+    ],
+    "bet": "5→1,4,7 (2車単 軸流し)",
+    "score": 20.5,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      4
+     ],
+     "third": [
+      1,
+      4,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026100738",
+    "day": 2,
+    "race": 5,
+    "axis": 7,
+    "axis_name": "鈴木那樹",
+    "partners": [
+     4,
+     1,
+     5
+    ],
+    "bet": "7→4,1,5 (2車単 軸流し)",
+    "score": 19.57,
+    "tri": {
+     "first": 7,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026100738",
+    "day": 2,
+    "race": 9,
+    "axis": 4,
+    "axis_name": "保科千春",
+    "partners": [
+     1,
+     5
+    ],
+    "bet": "4→1,5 (2車単 番手狙い)",
+    "score": 12.74,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      5
+     ],
+     "third": [
+      1,
+      5,
+      3,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026100738",
+    "day": 2,
+    "race": 1,
+    "axis": 4,
+    "axis_name": "高木隆弘",
+    "partners": [
+     6
+    ],
+    "bet": "4→6 (2車単 交差決着)",
+    "score": 12.71,
+    "tri": {
+     "first": 4,
+     "second": [
+      6
+     ],
+     "third": [
+      6,
+      1,
+      5,
+      7
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
