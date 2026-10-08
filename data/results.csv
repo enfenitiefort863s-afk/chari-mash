@@ -312,3 +312,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261008-honmei-shizuoka-5,20261008,08:12,honmei,静岡,shizuoka,5,7,鈴木那樹,4-1-5,19.57,1,7,6,4,逃,0,300,0,ok,0,600,0
 20261008-honmei-shizuoka-6,20261008,08:12,honmei,静岡,shizuoka,6,4,小野裕次,7-2-5,20.99,1,4,5,1,差,1,300,650,ok,0,600,0
 20261008-ara-shizuoka-9,20261008,08:12,ara,静岡,shizuoka,9,4,保科千春,1-5,12.74,2,5,4,3,差,0,200,0,ok,0,600,0
+20261008-honmei-shizuoka-11,20261008,08:12,honmei,静岡,shizuoka,11,5,菅原裕太,1-4-7,20.5,2,1,5,4,差,0,300,0,ok,0,600,0
