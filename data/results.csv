@@ -309,3 +309,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261007-ara-ogaki-5,20261007,20:06,ara,大垣,ogaki,5,2,土屋宏,1-3,12.68,2,1,2,4,捲,0,200,0,ok,0,600,0
 20261007-honmei-ogaki-6,20261007,20:06,honmei,大垣,ogaki,6,1,秋末蓮,3-5-2,14.65,2,5,1,3,差,0,300,0,ok,0,600,0
 20261008-ara-shizuoka-1,20261008,08:12,ara,静岡,shizuoka,1,4,高木隆弘,6,12.71,2,1,4,5,逃,0,100,0,ok,0,300,0
+20261008-honmei-shizuoka-5,20261008,08:12,honmei,静岡,shizuoka,5,7,鈴木那樹,4-1-5,19.57,1,7,6,4,逃,0,300,0,ok,0,600,0
