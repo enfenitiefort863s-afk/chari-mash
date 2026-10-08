@@ -318,3 +318,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261008-honmei-maebashi-5,20261008,20:06,honmei,前橋,maebashi,5,1,高橋雅之,2-3-5,15.33,1,1,5,6,差,1,300,290,ok,0,600,0
 20261008-honmei-maebashi-7,20261008,20:06,honmei,前橋,maebashi,7,1,伊藤大志,3-2-4,17.45,6,6,4,3,捲,0,300,0,ok,0,600,0
 20261008-ara-ogaki-7,20261008,20:06,ara,大垣,ogaki,7,3,菊谷信一,5-2,7.36,7,5,2,4,捲,0,200,0,ok,0,600,0
+20261008-honmei-ogaki-8,20261008,20:06,honmei,大垣,ogaki,8,1,篠原輝利,7-2-6,16.32,1,1,7,2,逃,1,300,290,ok,1,600,350
