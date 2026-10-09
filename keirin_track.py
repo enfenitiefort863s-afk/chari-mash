@@ -336,8 +336,16 @@ def pickup_riders(rows, limit=3):
     return out
 
 
-def report_date_str(now):
-    """7:20台の実行は日付が変わったあとに前日ぶんを報告するため、その場合は前日の日付にする"""
+def report_date_str(now, slot=None):
+    """対象の日付。
+    slot='night' (23:40の予定): 通常は当日。ただし深夜0時を越えて実行が遅れた場合は、
+      本来報告するはずだった前日の日付にする(正午より前なら、日をまたいだとみなす)
+    slot='morning' (7:20の予定): 常に前日ぶんを報告する
+    slotが分からない(手動実行など)場合だけ、実行時刻から推測する"""
+    if slot == "night":
+        return (now - timedelta(days=1)).strftime("%Y%m%d") if now.hour < 12 else now.strftime("%Y%m%d")
+    if slot == "morning":
+        return (now - timedelta(days=1)).strftime("%Y%m%d")
     if now.hour < 10:
         return (now - timedelta(days=1)).strftime("%Y%m%d")
     return now.strftime("%Y%m%d")
@@ -380,9 +388,9 @@ def mark_reported(date_str):
         json.dump({"date": date_str}, f)
 
 
-def has_today_rows():
+def has_today_rows(slot=None):
     """本日ぶん(7:20台の実行なら前日ぶん)の記録が、すでに1件でもあるか"""
-    target_date = report_date_str(datetime.now(JST))
+    target_date = report_date_str(datetime.now(JST), slot)
     return any(r.get("date") == target_date for r in read_rows())
 
 
