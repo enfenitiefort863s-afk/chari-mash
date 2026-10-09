@@ -327,3 +327,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261009-ara-yahiko-12,20261009,08:14,ara,弥彦,yahiko,12,8,新田祐大,6-2,18.33,7,9,3,5,差,0,200,0,ok,0,600,0
 20261009-ara-yokkaichi-12,20261009,11:27,ara,四日市,yokkaichi,12,4,坂口晃輔,1-2,15.03,3,1,5,4,差,0,200,0,ok,0,600,0
 20261009-honmei-nara-3,20261009,20:06,honmei,奈良,nara,3,1,渡邊諒馬,2-5-4,22.4,2,3,1,2,逃,0,300,0,ok,0,600,0
+20261009-honmei-kawasaki-4,20261009,11:27,honmei,川崎,kawasaki,4,1,福田海響,2-4-7,21.16,1,1,2,4,逃,1,300,150,ok,1,600,170
