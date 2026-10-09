@@ -13,24 +13,28 @@ permissions:
 jobs:
   result:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
       - run: pip install -r requirements.txt
       - run: python keirin_result.py
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          WORKERS: ${{ vars.WORKERS }}
+          PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
+          SLOT: ${{ (github.event.schedule == '40 14 * * *' && 'night') || (github.event.schedule == '20 22 * * *' && 'morning') || '' }}
       - name: Save data
         if: always()
         run: |
           mkdir -p data
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
+          git add data docs
           if ! git diff --cached --quiet; then
             git commit -m "update results"
             git pull --rebase
