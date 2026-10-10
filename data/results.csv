@@ -338,3 +338,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261010-honmei-gifu-4,20261010,08:14,honmei,岐阜,gifu,4,3,吉岡竜太,5-2-4,22.84,2,4,3,2,差,0,300,0,ok,0,600,0
 20261010-honmei-kawasaki-1,20261010,20:03,honmei,川崎,kawasaki,1,1,河合康晴,3-2-5,12.7,3,2,3,1,差,0,300,0,ok,0,600,0
 20261010-ara-nara-1,20261010,20:03,ara,奈良,nara,1,3,中野彰人,4-1,11.59,7,4,1,6,逃,0,200,0,ok,0,600,0
+20261010-ara-nara-4,20261010,20:03,ara,奈良,nara,4,3,藤井準也,6-1,8.05,2,1,3,2,捲,0,200,0,ok,0,600,0
