@@ -1,0 +1,190 @@
+[
+ {
+  "time": "08:13",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026101043",
+    "day": 2,
+    "race": 4,
+    "axis": 3,
+    "axis_name": "高佐龍太郎",
+    "partners": [
+     4,
+     5,
+     2
+    ],
+    "bet": "3→4,5,2 (2車単 軸流し)",
+    "score": 23.96,
+    "tri": {
+     "first": 3,
+     "second": [
+      4,
+      5
+     ],
+     "third": [
+      4,
+      5,
+      2,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "小倉",
+    "venue_key": "kokura",
+    "cup": "2026101181",
+    "day": 1,
+    "race": 11,
+    "axis": 1,
+    "axis_name": "石塚輪太郎",
+    "partners": [
+     7,
+     4,
+     2
+    ],
+    "bet": "1→7,4,2 (2車単 軸流し)",
+    "score": 23.37,
+    "tri": {
+     "first": 1,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "富山",
+    "venue_key": "toyama",
+    "cup": "2026101046",
+    "day": 2,
+    "race": 12,
+    "axis": 5,
+    "axis_name": "嵯峨昇喜郎",
+    "partners": [
+     4,
+     1,
+     7
+    ],
+    "bet": "5→4,1,7 (2車単 軸流し)",
+    "score": 19.81,
+    "tri": {
+     "first": 5,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小倉",
+    "venue_key": "kokura",
+    "cup": "2026101181",
+    "day": 1,
+    "race": 5,
+    "axis": 3,
+    "axis_name": "守谷陽介",
+    "partners": [
+     7,
+     2
+    ],
+    "bet": "3→7,2 (2車単 番手狙い)",
+    "score": 15.91,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      2
+     ],
+     "third": [
+      7,
+      2,
+      1,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小倉",
+    "venue_key": "kokura",
+    "cup": "2026101181",
+    "day": 1,
+    "race": 6,
+    "axis": 2,
+    "axis_name": "小林弘和",
+    "partners": [
+     7,
+     3
+    ],
+    "bet": "2→7,3 (2車単 番手狙い)",
+    "score": 14.72,
+    "tri": {
+     "first": 2,
+     "second": [
+      7,
+      3
+     ],
+     "third": [
+      7,
+      3,
+      5,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "弥彦",
+    "venue_key": "yahiko",
+    "cup": "2026100921",
+    "day": 3,
+    "race": 4,
+    "axis": 2,
+    "axis_name": "佐々木龍",
+    "partners": [
+     8,
+     9
+    ],
+    "bet": "2→8,9 (2車単 番手狙い)",
+    "score": 13.18,
+    "tri": {
+     "first": 2,
+     "second": [
+      8,
+      9
+     ],
+     "third": [
+      8,
+      9,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
