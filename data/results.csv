@@ -343,3 +343,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261010-ara-kawasaki-6,20261010,20:03,ara,川崎,kawasaki,6,3,赤塚悠人,1,8.89,1,3,1,4,差,1,100,230,ok,1,300,380
 20261010-honmei-kawasaki-9,20261010,20:03,honmei,川崎,kawasaki,9,1,内山雅貴,2-6-3,19.23,1,1,2,6,捲,1,300,180,ok,1,600,450
 20261011-ara-yahiko-4,20261011,08:13,ara,弥彦,yahiko,4,2,佐々木龍,8-9,13.18,6,3,4,7,差,0,200,0,ok,0,600,0
+20261011-honmei-toyama-12,20261011,08:13,honmei,富山,toyama,12,5,嵯峨昇喜郎,4-1-7,19.81,1,5,4,2,逃,1,300,260,ok,1,600,610
