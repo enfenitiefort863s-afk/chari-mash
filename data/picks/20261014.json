@@ -1,0 +1,188 @@
+[
+ {
+  "time": "08:22",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "青森",
+    "venue_key": "aomori",
+    "cup": "2026101412",
+    "day": 1,
+    "race": 4,
+    "axis": 5,
+    "axis_name": "邊見祐太",
+    "partners": [
+     1,
+     2,
+     4
+    ],
+    "bet": "5→1,2,4 (2車単 軸流し)",
+    "score": 26.96,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      4,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "青森",
+    "venue_key": "aomori",
+    "cup": "2026101412",
+    "day": 1,
+    "race": 5,
+    "axis": 3,
+    "axis_name": "横溝貫太",
+    "partners": [
+     7,
+     1,
+     4
+    ],
+    "bet": "3→7,1,4 (2車単 軸流し)",
+    "score": 22.41,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026101453",
+    "day": 1,
+    "race": 10,
+    "axis": 1,
+    "axis_name": "福永大智",
+    "partners": [
+     2,
+     7,
+     4
+    ],
+    "bet": "1→2,7,4 (2車単 軸流し)",
+    "score": 19.88,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      7
+     ],
+     "third": [
+      2,
+      7,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026101453",
+    "day": 1,
+    "race": 12,
+    "axis": 2,
+    "axis_name": "中井太祐",
+    "partners": [
+     3,
+     7
+    ],
+    "bet": "2→3,7 (2車単 2位軸)",
+    "score": 12.85,
+    "tri": {
+     "first": 2,
+     "second": [
+      3,
+      7
+     ],
+     "third": [
+      3,
+      7,
+      4,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026101361",
+    "day": 2,
+    "race": 12,
+    "axis": 3,
+    "axis_name": "藤井昭吾",
+    "partners": [
+     6,
+     4
+    ],
+    "bet": "3→6,4 (2車単 番手狙い)",
+    "score": 12.48,
+    "tri": {
+     "first": 3,
+     "second": [
+      6,
+      4
+     ],
+     "third": [
+      6,
+      4,
+      2,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026101361",
+    "day": 2,
+    "race": 4,
+    "axis": 4,
+    "axis_name": "木村浩宣",
+    "partners": [
+     3
+    ],
+    "bet": "4→3 (2車単 番手狙い)",
+    "score": 12.3,
+    "tri": {
+     "first": 4,
+     "second": [
+      3
+     ],
+     "third": [
+      3,
+      2,
+      5,
+      1
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
