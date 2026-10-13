@@ -184,5 +184,193 @@
     }
    }
   ]
+ },
+ {
+  "time": "20:08",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026101287",
+    "day": 2,
+    "race": 2,
+    "axis": 1,
+    "axis_name": "石井寛子",
+    "partners": [
+     2,
+     4,
+     5
+    ],
+    "bet": "1→2,4,5 (2車単 軸流し)",
+    "score": 13.92,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      5,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026101287",
+    "day": 2,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "小玉拓真",
+    "partners": [
+     2,
+     5,
+     4
+    ],
+    "bet": "1→2,5,4 (2車単 軸流し)",
+    "score": 13.62,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      4,
+      6
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "いわき平",
+    "venue_key": "iwakidaira",
+    "cup": "2026101213",
+    "day": 2,
+    "race": 2,
+    "axis": 1,
+    "axis_name": "半田水晶",
+    "partners": [
+     2,
+     3,
+     5
+    ],
+    "bet": "1→2,3,5 (2車単 軸流し)",
+    "score": 12.09,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026101287",
+    "day": 2,
+    "race": 5,
+    "axis": 4,
+    "axis_name": "長松大祐",
+    "partners": [
+     1,
+     3
+    ],
+    "bet": "4→1,3 (2車単 2位軸)",
+    "score": 9.15,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      3
+     ],
+     "third": [
+      1,
+      3,
+      2,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "いわき平",
+    "venue_key": "iwakidaira",
+    "cup": "2026101213",
+    "day": 2,
+    "race": 8,
+    "axis": 2,
+    "axis_name": "三浦雄大",
+    "partners": [
+     1,
+     4
+    ],
+    "bet": "2→1,4 (2車単 2位軸)",
+    "score": 6.19,
+    "tri": {
+     "first": 2,
+     "second": [
+      1,
+      4
+     ],
+     "third": [
+      1,
+      4,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026101287",
+    "day": 2,
+    "race": 4,
+    "axis": 2,
+    "axis_name": "小竹洋平",
+    "partners": [
+     1,
+     3
+    ],
+    "bet": "2→1,3 (2車単 2位軸)",
+    "score": 5.33,
+    "tri": {
+     "first": 2,
+     "second": [
+      1,
+      3
+     ],
+     "third": [
+      1,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
