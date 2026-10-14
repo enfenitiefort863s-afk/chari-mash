@@ -374,3 +374,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261013-ara-kumamoto-5,20261013,20:08,ara,熊本,kumamoto,5,4,長松大祐,1-3,9.15,3,3,1,4,差,0,200,0,ok,0,600,0
 20261013-ara-iwakidaira-8,20261013,20:08,ara,いわき平,iwakidaira,8,2,三浦雄大,1-4,6.19,2,1,2,3,差,0,200,0,ok,0,600,0
 20261013-honmei-kumamoto-9,20261013,20:08,honmei,熊本,kumamoto,9,1,小玉拓真,2-5-4,13.62,1,1,7,2,捲,0,300,0,ok,0,600,0
+20261014-honmei-aomori-4,20261014,08:22,honmei,青森,aomori,4,5,邊見祐太,1-2-4,26.96,1,5,2,7,逃,1,300,550,ok,1,600,4490
