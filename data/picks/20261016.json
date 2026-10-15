@@ -1,0 +1,130 @@
+[
+ {
+  "time": "08:21",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026101486",
+    "day": 3,
+    "race": 2,
+    "axis": 4,
+    "axis_name": "白上翔",
+    "partners": [
+     2,
+     3,
+     5
+    ],
+    "bet": "4→2,3,5 (2車単 軸流し)",
+    "score": 26.99,
+    "tri": {
+     "first": 4,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026101453",
+    "day": 3,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "中井太祐",
+    "partners": [
+     7,
+     3,
+     5
+    ],
+    "bet": "1→7,3,5 (2車単 軸流し)",
+    "score": 20.41,
+    "tri": {
+     "first": 1,
+     "second": [
+      7,
+      3
+     ],
+     "third": [
+      7,
+      3,
+      5,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026101486",
+    "day": 3,
+    "race": 8,
+    "axis": 2,
+    "axis_name": "木暮安由",
+    "partners": [
+     4,
+     5,
+     3
+    ],
+    "bet": "2→4,5,3 (2車単 軸流し)",
+    "score": 16.61,
+    "tri": {
+     "first": 2,
+     "second": [
+      4,
+      5
+     ],
+     "third": [
+      4,
+      5,
+      3,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026101486",
+    "day": 3,
+    "race": 7,
+    "axis": 2,
+    "axis_name": "大塚玲",
+    "partners": [
+     5,
+     3
+    ],
+    "bet": "2→5,3 (2車単 番手狙い)",
+    "score": 12.18,
+    "tri": {
+     "first": 2,
+     "second": [
+      5,
+      3
+     ],
+     "third": [
+      5,
+      3,
+      7,
+      1
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
