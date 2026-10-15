@@ -395,3 +395,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261015-ara-toyohashi-5,20261015,20:18,ara,豊橋,toyohashi,5,1,藤田真,2-3,5.58,3,2,3,1,差,0,200,0,ok,0,600,0
 20261015-honmei-shizuoka-8,20261015,20:18,honmei,静岡,shizuoka,8,1,邊見竜馬,2-3-4,17.86,1,1,2,3,捲,1,300,130,ok,1,600,190
 20261015-ara-shizuoka-9,20261015,20:18,ara,静岡,shizuoka,9,2,真船圭一郎,1-3,5.03,1,2,3,1,差,1,200,1300,ok,1,600,4880
+20261015-ara-toyohashi-9,20261015,20:18,ara,豊橋,toyohashi,9,2,成松春樹,1-3,11.15,2,3,2,7,差,0,200,0,ok,0,600,0
