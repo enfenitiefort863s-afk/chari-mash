@@ -403,3 +403,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261016-honmei-shizuoka-2,20261016,20:18,honmei,静岡,shizuoka,2,1,山原さくら,2-3-5,18.79,1,1,2,5,逃,1,300,160,ok,1,600,550
 20261016-honmei-shizuoka-4,20261016,20:18,honmei,静岡,shizuoka,4,1,今井希,2-3-4,17.41,3,2,5,1,差,0,300,0,ok,0,600,0
 20261016-ara-shizuoka-3,20261016,20:18,ara,静岡,shizuoka,3,2,大崎智久,1-3,9.74,5,1,7,4,逃,0,200,0,ok,0,600,0
+20261016-ara-shizuoka-7,20261016,20:18,ara,静岡,shizuoka,7,1,二藤元太,3-2,11.39,1,1,3,5,差,1,200,2740,ok,1,600,7030
+20261016-ara-toyohashi-6,20261016,20:18,ara,豊橋,toyohashi,6,2,伊藤健詞,1-3,6.71,5,1,3,6,逃,0,200,0,ok,0,600,0
