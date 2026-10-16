@@ -400,3 +400,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261016-honmei-beppu-2,20261016,08:21,honmei,別府,beppu,2,4,白上翔,2-3-5,26.99,5,1,6,2,差,0,300,0,ok,0,600,0
 20261016-ara-beppu-7,20261016,08:21,ara,別府,beppu,7,2,大塚玲,5-3,12.18,3,5,3,2,捲,0,200,0,ok,0,600,0
 20261016-honmei-beppu-8,20261016,08:21,honmei,別府,beppu,8,2,木暮安由,4-5-3,16.61,6,3,4,7,差,0,300,0,ok,0,600,0
+20261016-honmei-shizuoka-2,20261016,20:18,honmei,静岡,shizuoka,2,1,山原さくら,2-3-5,18.79,1,1,2,5,逃,1,300,160,ok,1,600,550
