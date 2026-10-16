@@ -1,0 +1,160 @@
+[
+ {
+  "time": "08:21",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026101784",
+    "day": 1,
+    "race": 6,
+    "axis": 5,
+    "axis_name": "藤田楓",
+    "partners": [
+     7,
+     1,
+     3
+    ],
+    "bet": "5→7,1,3 (2車単 軸流し)",
+    "score": 29.91,
+    "tri": {
+     "first": 5,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      3,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "富山",
+    "venue_key": "toyama",
+    "cup": "2026101746",
+    "day": 1,
+    "race": 5,
+    "axis": 4,
+    "axis_name": "大浦彩瑛",
+    "partners": [
+     1,
+     7,
+     3
+    ],
+    "bet": "4→1,7,3 (2車単 軸流し)",
+    "score": 22.45,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "高知",
+    "venue_key": "kochi",
+    "cup": "2026101774",
+    "day": 1,
+    "race": 9,
+    "axis": 3,
+    "axis_name": "横山尚則",
+    "partners": [
+     4,
+     1,
+     7
+    ],
+    "bet": "3→4,1,7 (2車単 軸流し)",
+    "score": 21.56,
+    "tri": {
+     "first": 3,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "京王閣",
+    "venue_key": "keiokaku",
+    "cup": "2026101727",
+    "day": 1,
+    "race": 12,
+    "axis": 4,
+    "axis_name": "取鳥雄吾",
+    "partners": [
+     1,
+     7
+    ],
+    "bet": "4→1,7 (2車単 番手狙い)",
+    "score": 13.89,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      2,
+      9
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "高知",
+    "venue_key": "kochi",
+    "cup": "2026101774",
+    "day": 1,
+    "race": 5,
+    "axis": 4,
+    "axis_name": "石丸寛之",
+    "partners": [
+     7,
+     5
+    ],
+    "bet": "4→7,5 (2車単 番手狙い)",
+    "score": 13.62,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      5
+     ],
+     "third": [
+      7,
+      5,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
