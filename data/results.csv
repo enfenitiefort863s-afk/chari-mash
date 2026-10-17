@@ -409,3 +409,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261017-honmei-toyama-5,20261017,08:21,honmei,富山,toyama,5,4,大浦彩瑛,1-7-3,22.45,2,7,4,1,差,0,300,0,ok,0,600,0
 20261017-ara-kochi-5,20261017,08:21,ara,高知,kochi,5,4,石丸寛之,7-5,13.62,5,5,3,2,差,0,200,0,ok,0,600,0
 20261017-honmei-kochi-9,20261017,08:21,honmei,高知,kochi,9,3,横山尚則,4-1-7,21.56,4,7,4,1,差,0,300,0,ok,0,600,0
+20261017-ara-keiokaku-12,20261017,08:21,ara,京王閣,keiokaku,12,4,取鳥雄吾,1-7,13.89,8,5,6,2,捲,0,200,0,ok,0,600,0
