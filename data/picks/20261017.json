@@ -156,5 +156,133 @@
     }
    }
   ]
+ },
+ {
+  "time": "20:12",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "豊橋",
+    "venue_key": "toyohashi",
+    "cup": "2026101545",
+    "day": 3,
+    "race": 5,
+    "axis": 1,
+    "axis_name": "成松春樹",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 20.58,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "豊橋",
+    "venue_key": "toyohashi",
+    "cup": "2026101545",
+    "day": 3,
+    "race": 7,
+    "axis": 1,
+    "axis_name": "末廣快理",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 13.63,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      6
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026101538",
+    "day": 3,
+    "race": 3,
+    "axis": 1,
+    "axis_name": "小林申太",
+    "partners": [
+     2,
+     3,
+     5
+    ],
+    "bet": "1→2,3,5 (2車単 軸流し)",
+    "score": 13.42,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "豊橋",
+    "venue_key": "toyohashi",
+    "cup": "2026101545",
+    "day": 3,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "吉田智哉",
+    "partners": [
+     2,
+     4
+    ],
+    "bet": "1→2,4 (2車単 2位軸)",
+    "score": 12.38,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
