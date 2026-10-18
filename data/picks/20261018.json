@@ -314,5 +314,193 @@
     }
    }
   ]
+ },
+ {
+  "time": "20:12",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "広島",
+    "venue_key": "hiroshima",
+    "cup": "2026101862",
+    "day": 1,
+    "race": 2,
+    "axis": 1,
+    "axis_name": "太田りゆ",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 22.16,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "広島",
+    "venue_key": "hiroshima",
+    "cup": "2026101862",
+    "day": 1,
+    "race": 7,
+    "axis": 1,
+    "axis_name": "高井流星",
+    "partners": [
+     2,
+     3,
+     6
+    ],
+    "bet": "1→2,3,6 (2車単 軸流し)",
+    "score": 16.7,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      6,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "佐世保",
+    "venue_key": "sasebo",
+    "cup": "2026101885",
+    "day": 1,
+    "race": 6,
+    "axis": 1,
+    "axis_name": "八谷誠賢",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 16.58,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      6
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "広島",
+    "venue_key": "hiroshima",
+    "cup": "2026101862",
+    "day": 1,
+    "race": 3,
+    "axis": 4,
+    "axis_name": "辰己豊",
+    "partners": [
+     1,
+     2
+    ],
+    "bet": "4→1,2 (2車単 2位軸)",
+    "score": 9.84,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "広島",
+    "venue_key": "hiroshima",
+    "cup": "2026101862",
+    "day": 1,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "長野魅切",
+    "partners": [
+     2,
+     3
+    ],
+    "bet": "1→2,3 (2車単 2位軸)",
+    "score": 9.4,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "佐世保",
+    "venue_key": "sasebo",
+    "cup": "2026101885",
+    "day": 1,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "山本浩成",
+    "partners": [
+     2,
+     3
+    ],
+    "bet": "1→2,3 (2車単 2位軸)",
+    "score": 7.62,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
