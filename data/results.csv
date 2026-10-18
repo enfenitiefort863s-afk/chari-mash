@@ -418,3 +418,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261018-honmei-toyama-1,20261018,08:17,honmei,富山,toyama,1,4,中込健太,1-3-5,25.39,3,5,1,4,差,0,300,0,ok,0,600,0
 20261018-honmei-toyama-11,20261018,08:17,honmei,富山,toyama,11,1,土生敦弘,3-4-7,28.07,1,1,4,5,逃,1,300,140,ok,1,600,270
 20261018-honmei-keiokaku-10,20261018,08:17,honmei,京王閣,keiokaku,10,9,石原颯,2-7-1,29.51,1,9,3,4,逃,0,300,0,ok,0,600,0
+20261018-ara-yokkaichi-10,20261018,18:06,ara,四日市,yokkaichi,10,4,小川大地,2-3,8.77,2,2,4,3,捲,0,200,0,ok,0,600,0
