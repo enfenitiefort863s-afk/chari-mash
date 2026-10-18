@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import keirin_line as k
 import keirin_web as kw
 from keirin_line import send_line
-from keirin_track import save_picks
+from keirin_track import save_learn_rows, save_picks
 
 VENUES = [v.strip() for v in (os.environ.get("VENUES") or "").split(",") if v.strip()]
 SESSION = os.environ.get("SESSION") or "all"   # day:通常開催のみ / midnight:ミッドナイトのみ / all:両方
@@ -124,6 +124,10 @@ def main():
         print("LINE送信に失敗しました(ページには反映済みです):", e)
 
     save_picks(honmei, ara, results)
+    try:
+        save_learn_rows(results)   # 評価の重みを学習するための元データ(的中率とは別に、全レースぶん残す)
+    except Exception as e:
+        print("学習用データの保存に失敗(配信・買い目の記録には影響しません):", e)
 
 
 if __name__ == "__main__":
