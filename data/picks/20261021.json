@@ -1,0 +1,130 @@
+[
+ {
+  "time": "00:28",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "前橋",
+    "venue_key": "maebashi",
+    "cup": "2026102122",
+    "day": 1,
+    "race": 7,
+    "axis": 1,
+    "axis_name": "福田海響",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 22.2,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "いわき平",
+    "venue_key": "iwakidaira",
+    "cup": "2026102113",
+    "day": 1,
+    "race": 6,
+    "axis": 1,
+    "axis_name": "鈴木那樹",
+    "partners": [
+     2,
+     3,
+     4
+    ],
+    "bet": "1→2,3,4 (2車単 軸流し)",
+    "score": 19.26,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "前橋",
+    "venue_key": "maebashi",
+    "cup": "2026102122",
+    "day": 1,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "近藤雄太",
+    "partners": [
+     2,
+     3,
+     5
+    ],
+    "bet": "1→2,3,5 (2車単 軸流し)",
+    "score": 18.85,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松阪",
+    "venue_key": "matsusaka",
+    "cup": "2026102147",
+    "day": 1,
+    "race": 7,
+    "axis": 7,
+    "axis_name": "佐藤亙",
+    "partners": [
+     1,
+     2
+    ],
+    "bet": "7→1,2 (2車単 番手狙い)",
+    "score": 18.24,
+    "tri": {
+     "first": 7,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
