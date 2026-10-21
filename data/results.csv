@@ -449,3 +449,6 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261021-honmei-maebashi-4,20261021,00:28,honmei,前橋,maebashi,4,1,近藤雄太,2-3-5,18.85,1,1,2,4,逃,1,300,180,ok,1,600,1100
 20261021-honmei-yokkaichi-11,20261021,10:25,honmei,四日市,yokkaichi,11,1,齋木翔多,4-6-3,24.55,2,5,1,4,逃,0,300,0,ok,0,600,0
 20261021-ara-kawasaki-3,20261021,10:25,ara,川崎,kawasaki,3,6,藤田和彦,2-7,17.15,5,2,7,4,捲,0,200,0,ok,0,600,0
+20261021-honmei-maebashi-7,20261021,00:28,honmei,前橋,maebashi,7,1,福田海響,2-3-4,22.2,1,1,2,4,逃,1,300,110,ok,1,600,140
+20261021-honmei-iwakidaira-6,20261021,00:28,honmei,いわき平,iwakidaira,6,1,鈴木那樹,2-3-4,19.26,1,1,7,4,逃,0,300,0,ok,0,600,0
+20261021-ara-matsusaka-7,20261021,00:28,ara,松阪,matsusaka,7,7,佐藤亙,1-2,18.24,1,7,1,2,差,1,200,1280,ok,1,600,4830
