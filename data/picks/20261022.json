@@ -343,5 +343,193 @@
     }
    }
   ]
+ },
+ {
+  "time": "18:24",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "川崎",
+    "venue_key": "kawasaki",
+    "cup": "2026102034",
+    "day": 3,
+    "race": 9,
+    "axis": 1,
+    "axis_name": "杉山悠也",
+    "partners": [
+     7,
+     5,
+     4
+    ],
+    "bet": "1→7,5,4 (2車単 軸流し)",
+    "score": 23.86,
+    "tri": {
+     "first": 1,
+     "second": [
+      7,
+      5
+     ],
+     "third": [
+      7,
+      5,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "四日市",
+    "venue_key": "yokkaichi",
+    "cup": "2026102148",
+    "day": 2,
+    "race": 11,
+    "axis": 3,
+    "axis_name": "小原太樹",
+    "partners": [
+     5,
+     1,
+     6
+    ],
+    "bet": "3→5,1,6 (2車単 軸流し)",
+    "score": 18.42,
+    "tri": {
+     "first": 3,
+     "second": [
+      5,
+      1
+     ],
+     "third": [
+      5,
+      1,
+      6,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "四日市",
+    "venue_key": "yokkaichi",
+    "cup": "2026102148",
+    "day": 2,
+    "race": 9,
+    "axis": 4,
+    "axis_name": "外田心斗",
+    "partners": [
+     2,
+     5,
+     7
+    ],
+    "bet": "4→2,5,7 (2車単 軸流し)",
+    "score": 15.09,
+    "tri": {
+     "first": 4,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      7,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "川崎",
+    "venue_key": "kawasaki",
+    "cup": "2026102034",
+    "day": 3,
+    "race": 11,
+    "axis": 6,
+    "axis_name": "山崎駿哉",
+    "partners": [
+     2,
+     1
+    ],
+    "bet": "6→2,1 (2車単 番手狙い)",
+    "score": 14.92,
+    "tri": {
+     "first": 6,
+     "second": [
+      2,
+      1
+     ],
+     "third": [
+      2,
+      1,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "前橋",
+    "venue_key": "maebashi",
+    "cup": "2026102122",
+    "day": 2,
+    "race": 5,
+    "axis": 5,
+    "axis_name": "加藤昌平",
+    "partners": [
+     2,
+     3
+    ],
+    "bet": "5→2,3 (2車単 番手狙い)",
+    "score": 13.66,
+    "tri": {
+     "first": 5,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      1,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松阪",
+    "venue_key": "matsusaka",
+    "cup": "2026102147",
+    "day": 2,
+    "race": 4,
+    "axis": 3,
+    "axis_name": "藤田大輔",
+    "partners": [
+     4,
+     1
+    ],
+    "bet": "3→4,1 (2車単 番手狙い)",
+    "score": 12.07,
+    "tri": {
+     "first": 3,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      2,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
