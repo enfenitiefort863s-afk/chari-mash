@@ -477,7 +477,7 @@ def now_min_jst():
 # 評価点 = 競走得点 + Σ(重み × 特徴量)。重みの初期値(点数換算)。
 # data/model.json があれば、過去の結果から学習した重みに置き換わる(keirin_learn.py)
 PRIOR_WEIGHTS = {"t3": 1.0, "jiriki": 2.0, "mark": 1.5,
-                 "pos_follow": 2.5, "pos_local": 1.0, "jump": 1.5}
+                 "pos_follow": 2.5, "pos_local": 1.0, "jump": 1.5, "pos_drop": 1.5}
 LEARN_KEYS = list(PRIOR_WEIGHTS)
 MODEL_PATH = os.environ.get("MODEL_PATH") or "data/model.json"
 MIN_MODEL_RACES = 150          # 学習結果を使うのに必要なレース数
@@ -555,10 +555,13 @@ def name_of(by_car, car):
 
 def is_girls_race(race, riders):
     """ガールズケイリンか(規則上ラインを組めず、個人の力量と作戦だけで決まる)。
+    判定は、出走する選手の級班(L1級)だけで行う。
+    ※タイトルの『ガールズ』は使わない。『F2ミッドナイトガールズ』のように、
+      イベント全体の名前に入っているだけで、同じ開催の男子レースまでガールズ扱いになってしまうため。
     級班の読み取りミスで1人だけ誤って判定されても全体がガールズ扱いにならないよう、
     半数以上がL1級のときだけガールズと判定する"""
-    if "ガールズ" in (race.get("title") or ""):
-        return True
+    if not riders:
+        return False
     n_l1 = sum(1 for r in riders if str(r.get("grade") or "") == "L1")
     return n_l1 * 2 >= len(riders)
 
@@ -605,6 +608,9 @@ def jump_features(lines, by_car):
     return out, notes
 
 
+DROP_GAP = 6.0   # 先頭と番手の評価点差がこれ以上なら、捲られたとき千切れるリスクを考え始める
+
+
 def position_feats(lines, by_car, local_pref):
     """ラインの並び(先頭・番手・3番手)から、位置ごとの特徴量と展開メモを作る。
     戻り値: ({車番: {特徴量名: 値}}, [(種類, 重み, 説明), ...])"""
@@ -620,12 +626,23 @@ def position_feats(lines, by_car, local_pref):
             if not r:
                 continue
             f = feats.setdefault(car, {})
+            gap = head["rating"] - r["rating"]         # 先頭と、この選手との実力差
             if head_front:
                 # 先行選手の番手は、差し・マークで決まりやすい。
                 # 先頭の自力の実績と、本人の差し・マークの実績が多いほど大きい
                 raw = min(1.5, 0.25 * head_power) + min(1.0, 0.15 * follow_wins(r))
                 if pos == 3:
                     raw *= 0.5
+                # ただし、先頭が強すぎて本人が力量的に見劣りする場合は、
+                # 外から捲られたときに付いていけず千切れるリスクがある。実力差が大きいほど割り引く
+                if gap >= DROP_GAP:
+                    drop = min(0.75, (gap - DROP_GAP) * 0.08)
+                    raw *= (1 - drop)
+                    f["pos_drop"] = -min(1.0, (gap - DROP_GAP) * 0.12)
+                    if gap >= DROP_GAP + 4:
+                        role = "番手" if pos == 2 else "3番手"
+                        notes.append(("drop", gap,
+                                      f"{circ(ln[0])}が強すぎて{role}{circ(car)}は捲られると千切れるリスク"))
                 f["pos_follow"] = raw / 2.5
                 if raw >= 0.8:
                     role = "番手" if pos == 2 else "3番手"
@@ -649,14 +666,17 @@ def position_bonus(lines, by_car, local_pref, weights):
 
 
 def pick_notes(notes, limit=3):
-    """展開メモを最大limit個。地元番手・飛びつき・車番隣接・バンク適性を優先し、残りは加点の大きい順"""
+    """展開メモを最大limit個。千切れリスク・地元番手・飛びつき・車番隣接・バンク適性を優先し、
+    残りは加点の大きい順"""
+    drop = sorted((n for n in notes if n[0] == "drop"), key=lambda n: -n[1])[:1]
     bank = sorted((n for n in notes if n[0] == "bank"), key=lambda n: -n[1])[:1]
     local = sorted((n for n in notes if n[0] == "local"), key=lambda n: -n[1])[:1]
     jump = sorted((n for n in notes if n[0] == "jump"), key=lambda n: -n[1])[:1]
     adjacent = sorted((n for n in notes if n[0] == "adjacent"), key=lambda n: -n[1])[:1]
     follow = sorted((n for n in notes if n[0] == "follow"), key=lambda n: -n[1])
-    follow = follow[:max(0, limit - len(bank) - len(local) - len(jump) - len(adjacent))]
-    return [n[2] for n in follow + local + jump + adjacent + bank]
+    used = len(drop) + len(bank) + len(local) + len(jump) + len(adjacent)
+    follow = follow[:max(0, limit - used)]
+    return [n[2] for n in follow + local + jump + adjacent + bank + drop]
 
 
 def girls_compare(riders, n=3):
@@ -1153,8 +1173,17 @@ def build_short_message(honmei, ara, url=None):
     return "\n".join(out)
 
 
+def line_position_labels(lines):
+    """並び予想から、車番ごとの位置(1=先頭 2=番手 3=3番手以降 0=単騎/ライン無し)を返す"""
+    labels = {}
+    for ln in lines or []:
+        for i, car in enumerate(ln):
+            labels[car] = 0 if len(ln) == 1 else min(i + 1, 3)
+    return labels
+
+
 def race_learn_row(race):
-    """学習用に、レースの全選手の特徴量(基本データだけ)を1行にまとめる"""
+    """学習用に、レースの全選手の特徴量と、並び予想での位置(先頭/番手/単騎など)を1行にまとめる"""
     riders = [r for r in race["riders"] if r.get("score") is not None and r.get("車") is not None]
     if len(riders) < 5:
         return None
@@ -1166,8 +1195,10 @@ def race_learn_row(race):
         pf, _ = position_feats(lines, by_car, VENUE_PREF.get(race["venue"]))
         for car, f in pf.items():
             feats.setdefault(car, {}).update(f)
+    pos = line_position_labels(lines)
     return {"k": f"{race['venue']}-{race.get('cup')}-{race.get('day')}-{race['race']}",
-            "g": int(girls),
+            "g": int(girls), "v": race["venue"],
+            "pos": pos,
             "r": [[c, r["score"], [round(feats[c].get(k, 0.0), 3) for k in LEARN_KEYS]]
                   for c, r in by_car.items()]}
 
