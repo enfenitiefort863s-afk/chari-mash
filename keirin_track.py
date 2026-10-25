@@ -24,7 +24,20 @@ KIND_LABEL = {"honmei": "🎯本命", "ara": "🌪荒れ"}
 
 
 # ---------------- 配信した買い目の保存 ----------------
-def save_picks(honmei, ara, results):
+def session_already_sent(session):
+    """今日、同じ種類(day / midnight)の配信をすでに送っているか。二重配信を防ぐために使う"""
+    path = os.path.join(PICK_DIR, datetime.now(JST).strftime("%Y%m%d") + ".json")
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path, encoding="utf-8") as f:
+            entries = json.load(f)
+    except Exception:
+        return False
+    return any(e.get("session") == session for e in entries)
+
+
+def save_picks(honmei, ara, results, session=""):
     """配信した本命・荒れの買い目を data/picks/YYYYMMDD.json に追記する"""
     url_of = {(rc["venue"], rc["race"]): rc.get("url", "") for rc in results}
     now = datetime.now(JST)
@@ -58,7 +71,7 @@ def save_picks(honmei, ara, results):
                 entries = json.load(f)
         except Exception:
             entries = []
-    entries.append({"time": now.strftime("%H:%M"), "picks": picks})
+    entries.append({"time": now.strftime("%H:%M"), "session": session, "picks": picks})
     with open(path, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=1)
     print(f"買い目を保存しました: {path} ({len(picks)}件)")
@@ -202,6 +215,62 @@ def read_rows():
         return []
     with open(RESULT_CSV, encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
+
+
+def _agg(rows):
+    """件数・的中率・回収率をまとめる。1件も無ければ None"""
+    rows = [r for r in rows if str(r.get("status")) == "ok"]
+    n = len(rows)
+    if not n:
+        return None
+    cost = sum(int(r["cost"] or 0) for r in rows)
+    pay = sum(int(r["payout"] or 0) for r in rows)
+    hit = sum(1 for r in rows if str(r["hit"]) == "1")
+    win = sum(1 for r in rows if str(r["axis_finish"]) == "1")
+    return {
+        "n": n, "hit": hit, "hit_rate": round(hit * 100 / n, 1),
+        "win": win, "win_rate": round(win * 100 / n, 1),
+        "roi": round(pay * 100 / cost, 1) if cost else 0,
+        "cost": cost, "pay": pay,
+    }
+
+
+def performance_stats():
+    """回収率・的中率を、ページでグラフにする用にまとめる(本命/荒れ別・会場別・日別推移)"""
+    rows = read_rows()
+    by_kind = {}
+    for kind in ("honmei", "ara"):
+        s = _agg([r for r in rows if r["kind"] == kind])
+        if s:
+            by_kind[kind] = s
+
+    by_venue_rows = {}
+    for r in rows:
+        by_venue_rows.setdefault(r["venue"], []).append(r)
+    by_venue = {}
+    for v, rs in by_venue_rows.items():
+        s = _agg(rs)
+        if s and s["n"] >= 5:        # 件数が少なすぎる会場は、ぶれが大きいので外す
+            by_venue[v] = s
+
+    by_date_rows = {}
+    for r in rows:
+        by_date_rows.setdefault(r.get("date", ""), []).append(r)
+    dates = sorted(d for d in by_date_rows if d)[-30:]   # 直近30日ぶん
+    daily, cum_cost, cum_pay = [], 0, 0
+    for d in dates:
+        s = _agg(by_date_rows[d])
+        if not s:
+            continue
+        cum_cost += s["cost"]
+        cum_pay += s["pay"]
+        daily.append({
+            "date": f"{d[4:6]}/{d[6:8]}",
+            "roi": s["roi"],                                           # その日だけの回収率
+            "cum_roi": round(cum_pay * 100 / cum_cost, 1) if cum_cost else 0,  # 通算の回収率
+        })
+
+    return {"by_kind": by_kind, "by_venue": by_venue, "daily": daily}
 
 
 def append_rows(rows):
