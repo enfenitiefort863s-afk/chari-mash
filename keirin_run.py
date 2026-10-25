@@ -8,7 +8,9 @@ from concurrent.futures import ThreadPoolExecutor
 import keirin_line as k
 import keirin_web as kw
 from keirin_line import send_line
-from keirin_track import save_learn_rows, save_picks
+from datetime import datetime
+
+from keirin_track import JST, save_learn_rows, save_picks, session_already_sent
 
 VENUES = [v.strip() for v in (os.environ.get("VENUES") or "").split(",") if v.strip()]
 SESSION = os.environ.get("SESSION") or "all"   # day:通常開催のみ / midnight:ミッドナイトのみ / all:両方
@@ -69,7 +71,29 @@ def apply_min_score(honmei, ara):
     return honmei, ara
 
 
+SESSION_HOURS = {"day": (6, 14), "midnight": (18, 24)}   # 日本時間でこの時間帯に動いたときだけ送る
+
+
+def skip_reason():
+    """送ってはいけない理由があれば、その説明を返す(無ければ None)。
+    ・GitHub側の予約が大幅に遅れて動いた場合(時間外)
+    ・同じ配信を、外部タイマーとGitHubの予約の両方から二重に動かしてしまった場合"""
+    if SESSION not in SESSION_HOURS:
+        return None                      # 手動実行(all)は、どちらのガードも使わない
+    lo, hi = SESSION_HOURS[SESSION]
+    now = datetime.now(JST)
+    if not (lo <= now.hour < hi):
+        return f"想定の時間帯({lo}時〜{hi}時)を外れているため送信しません(遅れて動いた予約の可能性)"
+    if session_already_sent(SESSION):
+        return "同じ配信はすでに送信済みのため、送信しません"
+    return None
+
+
 def main():
+    reason = skip_reason()
+    if reason:
+        print(reason)
+        return
     results = k.fetch_all_today()
     print(f"取得レース数: {len(results)}")
     if VENUES:
@@ -123,7 +147,7 @@ def main():
     except Exception as e:
         print("LINE送信に失敗しました(ページには反映済みです):", e)
 
-    save_picks(honmei, ara, results)
+    save_picks(honmei, ara, results, session=SESSION)
     try:
         save_learn_rows(results)   # 評価の重みを学習するための元データ(的中率とは別に、全レースぶん残す)
     except Exception as e:
