@@ -5,10 +5,18 @@ on:
     # GitHubのcronはUTC。日本時間 8:00(通常開催)/ 20:00(ミッドナイト)
     - cron: "0 23 * * *"   # 8:00 JST -> 通常開催(ナイターまで)
     - cron: "0 11 * * *"   # 20:00 JST -> ミッドナイトのみ
-  workflow_dispatch: {}   # 手動実行ボタン用
+  workflow_dispatch:       # 外部タイマー(cron-job.org)や手動実行ボタンから呼ぶ用
+    inputs:
+      session:
+        description: "day(通常開催) / midnight(ミッドナイト) / all(両方)"
+        default: "all"
 
 permissions:
   contents: write         # 配信した買い目(data/)をリポジトリに保存するため
+
+concurrency:
+  group: keirin-line      # 同時に2つ動かさず順番に実行する(二重配信ガードが前の実行の記録を見られるように)
+  cancel-in-progress: false
 
 jobs:
   send:
@@ -30,7 +38,7 @@ jobs:
           VENUES: ${{ vars.VENUES }}
           N_PICKS: ${{ vars.N_PICKS }}
           ENRICH_BUDGET: "600"
-          SESSION: ${{ (github.event.schedule == '0 23 * * *' && 'day') || (github.event.schedule == '0 11 * * *' && 'midnight') || 'all' }}
+          SESSION: ${{ (github.event.schedule == '0 23 * * *' && 'day') || (github.event.schedule == '0 11 * * *' && 'midnight') || github.event.inputs.session || 'all' }}
       - name: Save data
         if: always()
         run: |
