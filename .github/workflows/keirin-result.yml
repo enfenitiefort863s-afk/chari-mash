@@ -5,10 +5,18 @@ on:
     # 日本時間 23:40(その日の結果)と 7:20(深夜レースの取りこぼし)
     - cron: "40 14 * * *"
     - cron: "20 22 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "night(23:40の分) / morning(7:20の分) / 空欄(手動)"
+        default: ""
 
 permissions:
   contents: write
+
+concurrency:
+  group: keirin-result
+  cancel-in-progress: false
 
 jobs:
   result:
@@ -27,7 +35,7 @@ jobs:
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           WORKERS: ${{ vars.WORKERS }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
-          SLOT: ${{ (github.event.schedule == '40 14 * * *' && 'night') || (github.event.schedule == '20 22 * * *' && 'morning') || '' }}
+          SLOT: ${{ (github.event.schedule == '40 14 * * *' && 'night') || (github.event.schedule == '20 22 * * *' && 'morning') || github.event.inputs.slot || '' }}
       - name: Save data
         if: always()
         run: |
