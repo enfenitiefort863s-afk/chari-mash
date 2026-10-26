@@ -1,0 +1,185 @@
+[
+ {
+  "time": "10:03",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "京王閣",
+    "venue_key": "keiokaku",
+    "cup": "2026102627",
+    "day": 1,
+    "race": 10,
+    "axis": 7,
+    "axis_name": "野田源一",
+    "partners": [
+     1,
+     5,
+     2
+    ],
+    "bet": "7→1,5,2 (2車単 軸流し)",
+    "score": 21.88,
+    "tri": {
+     "first": 7,
+     "second": [
+      1,
+      5
+     ],
+     "third": [
+      1,
+      5,
+      2,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "京王閣",
+    "venue_key": "keiokaku",
+    "cup": "2026102627",
+    "day": 1,
+    "race": 9,
+    "axis": 4,
+    "axis_name": "渡邉雄太",
+    "partners": [
+     1,
+     3,
+     5
+    ],
+    "bet": "4→1,3,5 (2車単 軸流し)",
+    "score": 18.45,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      3
+     ],
+     "third": [
+      1,
+      3,
+      5,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "京王閣",
+    "venue_key": "keiokaku",
+    "cup": "2026102627",
+    "day": 1,
+    "race": 6,
+    "axis": 3,
+    "axis_name": "須永優太",
+    "partners": [
+     7,
+     2,
+     1
+    ],
+    "bet": "3→7,2,1 (2車単 軸流し)",
+    "score": 18.31,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      2
+     ],
+     "third": [
+      7,
+      2,
+      1,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小松島",
+    "venue_key": "komatsushima",
+    "cup": "2026102473",
+    "day": 3,
+    "race": 6,
+    "axis": 2,
+    "axis_name": "明田春喜",
+    "partners": [
+     4
+    ],
+    "bet": "2→4 (2車単 番手狙い)",
+    "score": 20.81,
+    "tri": {
+     "first": 2,
+     "second": [
+      4
+     ],
+     "third": [
+      4,
+      1,
+      5,
+      7
+     ],
+     "points": 3
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "名古屋",
+    "venue_key": "nagoya",
+    "cup": "2026102442",
+    "day": 3,
+    "race": 6,
+    "axis": 2,
+    "axis_name": "富安保充",
+    "partners": [
+     5
+    ],
+    "bet": "2→5 (2車単 番手狙い)",
+    "score": 17.96,
+    "tri": {
+     "first": 2,
+     "second": [
+      5
+     ],
+     "third": [
+      5,
+      3,
+      7,
+      4
+     ],
+     "points": 3
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小松島",
+    "venue_key": "komatsushima",
+    "cup": "2026102473",
+    "day": 3,
+    "race": 8,
+    "axis": 3,
+    "axis_name": "吉田敏洋",
+    "partners": [
+     4
+    ],
+    "bet": "3→4 (2車単 番手狙い)",
+    "score": 17.92,
+    "tri": {
+     "first": 3,
+     "second": [
+      4
+     ],
+     "third": [
+      4,
+      7,
+      5,
+      1
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
