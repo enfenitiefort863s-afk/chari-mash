@@ -1,0 +1,131 @@
+[
+ {
+  "time": "10:53",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "京王閣",
+    "venue_key": "keiokaku",
+    "cup": "2026102627",
+    "day": 2,
+    "race": 9,
+    "axis": 3,
+    "axis_name": "渡邉雄太",
+    "partners": [
+     5,
+     6,
+     2
+    ],
+    "bet": "3→5,6,2 (2車単 軸流し)",
+    "score": 25.26,
+    "tri": {
+     "first": 3,
+     "second": [
+      5,
+      6
+     ],
+     "third": [
+      5,
+      6,
+      2,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026102784",
+    "day": 1,
+    "race": 9,
+    "axis": 4,
+    "axis_name": "星野辰也",
+    "partners": [
+     2,
+     7,
+     6
+    ],
+    "bet": "4→2,7,6 (2車単 軸流し)",
+    "score": 24.44,
+    "tri": {
+     "first": 4,
+     "second": [
+      2,
+      7
+     ],
+     "third": [
+      2,
+      7,
+      6,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "小田原",
+    "venue_key": "odawara",
+    "cup": "2026102636",
+    "day": 2,
+    "race": 12,
+    "axis": 5,
+    "axis_name": "吉澤純平",
+    "partners": [
+     1,
+     7,
+     2
+    ],
+    "bet": "5→1,7,2 (2車単 軸流し)",
+    "score": 19.65,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      2,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026102784",
+    "day": 1,
+    "race": 11,
+    "axis": 6,
+    "axis_name": "小菅誠",
+    "partners": [
+     2,
+     5
+    ],
+    "bet": "6→2,5 (2車単 番手狙い)",
+    "score": 13.16,
+    "tri": {
+     "first": 6,
+     "second": [
+      2,
+      5
+     ],
+     "third": [
+      2,
+      5,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
