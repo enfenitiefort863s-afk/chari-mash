@@ -1,0 +1,161 @@
+[
+ {
+  "time": "11:04",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "小田原",
+    "venue_key": "odawara",
+    "cup": "2026102636",
+    "day": 3,
+    "race": 7,
+    "axis": 5,
+    "axis_name": "滝本幸正",
+    "partners": [
+     4,
+     3,
+     7
+    ],
+    "bet": "5→4,3,7 (2車単 軸流し)",
+    "score": 36.39,
+    "tri": {
+     "first": 5,
+     "second": [
+      4,
+      3
+     ],
+     "third": [
+      4,
+      3,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026102784",
+    "day": 2,
+    "race": 7,
+    "axis": 1,
+    "axis_name": "星野辰也",
+    "partners": [
+     5,
+     4,
+     2
+    ],
+    "bet": "1→5,4,2 (2車単 軸流し)",
+    "score": 31.9,
+    "tri": {
+     "first": 1,
+     "second": [
+      5,
+      4
+     ],
+     "third": [
+      5,
+      4,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "小田原",
+    "venue_key": "odawara",
+    "cup": "2026102636",
+    "day": 3,
+    "race": 5,
+    "axis": 5,
+    "axis_name": "日高裕太",
+    "partners": [
+     4,
+     1,
+     7
+    ],
+    "bet": "5→4,1,7 (2車単 軸流し)",
+    "score": 25.21,
+    "tri": {
+     "first": 5,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "岐阜",
+    "venue_key": "gifu",
+    "cup": "2026102843",
+    "day": 1,
+    "race": 10,
+    "axis": 7,
+    "axis_name": "海老根恵太",
+    "partners": [
+     5,
+     1
+    ],
+    "bet": "7→5,1 (2車単 番手狙い)",
+    "score": 13.89,
+    "tri": {
+     "first": 7,
+     "second": [
+      5,
+      1
+     ],
+     "third": [
+      5,
+      1,
+      4,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "京王閣",
+    "venue_key": "keiokaku",
+    "cup": "2026102627",
+    "day": 3,
+    "race": 12,
+    "axis": 3,
+    "axis_name": "松谷秀幸",
+    "partners": [
+     4,
+     1
+    ],
+    "bet": "3→4,1 (2車単 番手狙い)",
+    "score": 13.37,
+    "tri": {
+     "first": 3,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      7,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
