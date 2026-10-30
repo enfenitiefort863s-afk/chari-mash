@@ -523,3 +523,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261030-honmei-aomori-7,20261030,11:28,honmei,青森,aomori,7,1,河村雅章,5-2-4,23.87,3,2,3,1,差,0,300,0,ok,0,600,0
 20261030-ara-gifu-11,20261030,11:28,ara,岐阜,gifu,11,5,長田祐弥,3-1,15.01,4,4,3,2,差,0,200,0,ok,0,600,0
 20261030-ara-utsunomiya-2,20261030,11:28,ara,宇都宮,utsunomiya,2,5,菅藤智,3,14.28,2,3,5,1,捲,0,100,0,ok,0,300,0
+20261030-honmei-utsunomiya-10,20261030,11:28,honmei,宇都宮,utsunomiya,10,1,椎名俊介,7-4-3,26.43,1,1,5,2,逃,0,300,0,ok,0,600,0
+20261030-ara-utsunomiya-11,20261030,11:28,ara,宇都宮,utsunomiya,11,6,筒井裕哉,3-7,14.52,4,3,7,5,差,0,200,0,ok,0,600,0
