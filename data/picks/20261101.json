@@ -1,0 +1,191 @@
+[
+ {
+  "time": "11:00",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "防府",
+    "venue_key": "hofu",
+    "cup": "2026103163",
+    "day": 2,
+    "race": 9,
+    "axis": 9,
+    "axis_name": "太田海也",
+    "partners": [
+     5,
+     1,
+     2
+    ],
+    "bet": "9→5,1,2 (2車単 軸流し)",
+    "score": 35.17,
+    "tri": {
+     "first": 9,
+     "second": [
+      5,
+      1
+     ],
+     "third": [
+      5,
+      1,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "宇都宮",
+    "venue_key": "utsunomiya",
+    "cup": "2026103024",
+    "day": 3,
+    "race": 8,
+    "axis": 5,
+    "axis_name": "梅澤忠秀",
+    "partners": [
+     2,
+     6,
+     4
+    ],
+    "bet": "5→2,6,4 (2車単 軸流し)",
+    "score": 32.98,
+    "tri": {
+     "first": 5,
+     "second": [
+      2,
+      6
+     ],
+     "third": [
+      2,
+      6,
+      4,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "防府",
+    "venue_key": "hofu",
+    "cup": "2026103163",
+    "day": 2,
+    "race": 5,
+    "axis": 9,
+    "axis_name": "渡邉雅也",
+    "partners": [
+     5,
+     2,
+     7
+    ],
+    "bet": "9→5,2,7 (2車単 軸流し)",
+    "score": 27.92,
+    "tri": {
+     "first": 9,
+     "second": [
+      5,
+      2
+     ],
+     "third": [
+      5,
+      2,
+      7,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "久留米",
+    "venue_key": "kurume",
+    "cup": "2026110183",
+    "day": 1,
+    "race": 12,
+    "axis": 1,
+    "axis_name": "成田和也",
+    "partners": [
+     5,
+     7
+    ],
+    "bet": "1→5,7 (2車単 番手狙い)",
+    "score": 17.79,
+    "tri": {
+     "first": 1,
+     "second": [
+      5,
+      7
+     ],
+     "third": [
+      5,
+      7,
+      2,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "宇都宮",
+    "venue_key": "utsunomiya",
+    "cup": "2026103024",
+    "day": 3,
+    "race": 11,
+    "axis": 5,
+    "axis_name": "藤原憲征",
+    "partners": [
+     3,
+     2
+    ],
+    "bet": "5→3,2 (2車単 番手狙い)",
+    "score": 14.6,
+    "tri": {
+     "first": 5,
+     "second": [
+      3,
+      2
+     ],
+     "third": [
+      3,
+      2,
+      1,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "久留米",
+    "venue_key": "kurume",
+    "cup": "2026110183",
+    "day": 1,
+    "race": 3,
+    "axis": 7,
+    "axis_name": "寺崎祐樹",
+    "partners": [
+     2,
+     1
+    ],
+    "bet": "7→2,1 (2車単 番手狙い)",
+    "score": 12.29,
+    "tri": {
+     "first": 7,
+     "second": [
+      2,
+      1
+     ],
+     "third": [
+      2,
+      1,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
