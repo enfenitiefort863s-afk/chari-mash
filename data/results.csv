@@ -540,3 +540,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261102-ara-toyohashi-8,20261102,11:11,ara,豊橋,toyohashi,8,7,香川雄介,1-5,19.21,2,5,7,4,逃,0,200,0,ok,0,600,0
 20261102-ara-toyohashi-5,20261102,11:11,ara,豊橋,toyohashi,5,3,宮越孝治,5-2,18.84,6,2,1,4,差,0,200,0,ok,0,600,0
 20261102-ara-hofu-4,20261102,11:11,ara,防府,hofu,4,5,山口貴弘,9-3,16.43,4,3,1,7,差,0,200,0,ok,0,600,0
+20261102-honmei-toyohashi-11,20261102,11:11,honmei,豊橋,toyohashi,11,7,小堀敢太,1-5-2,19.24,2,1,7,3,差,0,300,0,ok,0,600,0
