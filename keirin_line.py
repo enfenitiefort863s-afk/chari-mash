@@ -1144,12 +1144,57 @@ def sort_picks(honmei, ara):
     return sorted(picks, key=lambda t: (t[1]["deadline"] if t[1]["deadline"] is not None else 9999, t[1]["race"]))
 
 
+def forecast_pickup_lines(honmei, ara, limit=3):
+    """予想時点のピックアップ選手。おすすめレースの軸選手から、
+    総合評価(星) → 軸の評価点 → 直近の3着内率 の順で上位を選ぶ。
+    結果後の好走ピックアップ(keirin_track.pickup_riders)とは別物で、
+    レース前に「今日はこの選手に注目」を出すための欄。"""
+    cand = []
+    for kind, x in sort_picks(honmei, ara):
+        axis = x["honmei_axis"] if kind == "honmei" else x["ara_axis"]
+        r = x["by_car"].get(axis)
+        if not r or not r.get("name"):
+            continue
+        score = x["honmei"] if kind == "honmei" else x["ara"]
+        f = r.get("form") or {}
+        top3 = f["top3"] if f.get("n", 0) >= 3 and f.get("top3") is not None else -1
+        key = (stars(score).count("★"), r.get("rating") or 0, top3)
+        cand.append((key, kind, x, axis, r, score))
+    cand.sort(key=lambda t: t[0], reverse=True)   # 星→評価点→3着内率の順で降順
+    seen, chosen = set(), []
+    for item in cand:
+        name = item[4]["name"]
+        if name in seen:
+            continue
+        seen.add(name)
+        chosen.append(item)
+        if len(chosen) >= limit:
+            break
+    if not chosen:
+        return []
+    out = ["", "⭐本日のピックアップ選手"]
+    for _, kind, x, axis, r, score in chosen:
+        icon = "🎯本命" if kind == "honmei" else "🌪荒れ"
+        verdict = x["honmei_verdict"] if kind == "honmei" else x["ara_verdict"]
+        kyaku = r.get("脚", "")
+        out.append(f"・{x['venue']}{x['race']}R　⏰{fmt_time(x['deadline'])}　{icon}")
+        out.append(f"　◎{circ(axis)} {r['name']}" + (f"({kyaku})" if kyaku else "")
+                   + f"　評価{r['rating']:.1f}")
+        out.append(f"　総合{stars(score)} {verdict}")
+        f = r.get("form")
+        if f and f.get("n", 0) >= 3:
+            mood = "(上り調子)" if f["trend"] >= 1.0 else ("(下り調子)" if f["trend"] <= -1.0 else "")
+            out.append(f"　📈直近{f['n']}走 平均{f['avg']:.1f}着 3着内{f['top3'] * 100:.0f}%{mood}")
+    return out
+
+
 def build_message(honmei, ara, level=3, enforce_limit=True):
     """展開予想・買い目まで含めたフル版。LINEには使わず、ページ(GitHub Pages)用に使う"""
     jst = datetime.now(timezone(timedelta(hours=9)))
     picks = sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
     out += pick_list(picks, True)
+    out += forecast_pickup_lines(honmei, ara)
     for kind, x in picks:
         out.append(race_block(x, kind, 1, level))
     out += ["", "", footer()]
@@ -1165,6 +1210,7 @@ def build_short_message(honmei, ara, url=None):
     picks = sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
     out += pick_list(picks, True)
+    out += forecast_pickup_lines(honmei, ara)
     out.append("")
     if url:
         out.append(f"🔗展開予想・買い目はこちら\n{url}")
@@ -1204,15 +1250,13 @@ def race_learn_row(race):
 
 
 # ================= LINE配信 =================
-def send_line(texts):
-    if isinstance(texts, str):
-        texts = [texts]
+# ================= 通知の送り先(LINE / Discord) =================
+DISCORD_LIMIT = 1800   # Discordは1通2000文字まで。余裕を持たせる(絵文字は2文字分で数える)
+
+
+def _send_line_only(texts):
     token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
     user_id = os.environ.get("LINE_USER_ID", "")
-    if not token:
-        print("LINE_CHANNEL_ACCESS_TOKEN が未設定のため、送信せず表示のみ")
-        print("\n-----\n".join(texts))
-        return
     # LINEの1通は約5000文字まで、1回に5通まで
     payload = {"messages": [{"type": "text", "text": fit_text(t)} for t in texts[:5]]}
     if user_id:
@@ -1222,9 +1266,105 @@ def send_line(texts):
         url = "https://api.line.me/v2/bot/message/broadcast"  # 友だち全員に送る
     r = requests.post(
         url,
-        headers={"Authorization": f"Bearer {token}",
-                 "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         json=payload, timeout=20,
     )
     print("LINE:", r.status_code, r.text[:200])
     r.raise_for_status()
+
+
+def split_for_discord(text, limit=DISCORD_LIMIT):
+    """長い文面を、レース単位(区切り線の手前)でまとめながら、1通の上限以内に分ける"""
+    blocks = re.split(r"\n(?=━{5,})", text)
+    chunks, cur = [], ""
+
+    def flush():
+        nonlocal cur
+        if cur.strip():
+            chunks.append(cur.strip("\n"))
+        cur = ""
+
+    for block in blocks:
+        if line_len(block) > limit:                     # 1レースだけで上限を超える場合は、行ごとに詰める
+            flush()
+            for line in block.split("\n"):
+                while line_len(line) > limit:           # 1行が長すぎる場合は、文字数で切る
+                    piece, line = line[:500], line[500:]
+                    if line_len(cur + piece) > limit:
+                        flush()
+                    cur += piece + "\n"
+                if line_len(cur + line) > limit:
+                    flush()
+                cur += line + "\n"
+            continue
+        cand = (cur + "\n" + block) if cur else block
+        if line_len(cand) > limit:
+            flush()
+            cur = block
+        else:
+            cur = cand
+    flush()
+    return chunks or [""]
+
+
+def _send_discord(texts):
+    url = os.environ["DISCORD_WEBHOOK_URL"]
+    chunks = []
+    for t in texts:
+        chunks += split_for_discord(t)
+    for c in chunks:
+        if not c.strip():
+            continue
+        for _ in range(3):                               # 送りすぎの制限(429)のときは、少し待ってやり直す
+            r = requests.post(
+                url,
+                json={"content": c, "username": "マッシュチャリンコ", "allowed_mentions": {"parse": []}},
+                timeout=20,
+            )
+            if r.status_code == 429:
+                try:
+                    wait = float(r.json().get("retry_after", 1))
+                except Exception:
+                    wait = 1.0
+                time.sleep(min(wait, 10))
+                continue
+            break
+        print("Discord:", r.status_code)
+        r.raise_for_status()
+        time.sleep(0.4)
+
+
+def send_line(texts):
+    """配信の入口(名前は昔のまま)。設定されている送り先すべてに送る。
+    送り先は環境変数 NOTIFY で絞れる(例: line / discord / line,discord)。
+    未設定なら、LINEのトークン・DiscordのWebhook URLのうち、設定済みのものすべてに送る。
+    片方が失敗してももう片方は送り、すべて失敗したときだけエラーにする"""
+    if isinstance(texts, str):
+        texts = [texts]
+    configured = {
+        "line": bool(os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")),
+        "discord": bool(os.environ.get("DISCORD_WEBHOOK_URL")),
+    }
+    wanted = [c.strip().lower() for c in os.environ.get("NOTIFY", "").split(",") if c.strip()]
+    channels = []
+    for c in (wanted or [k for k in configured if configured[k]]):
+        if c not in configured:
+            print(f"NOTIFYに未対応の送り先 '{c}' があります(line / discord が使えます)")
+        elif not configured[c]:
+            print(f"{c} は指定されていますが、トークン/URLが未設定のため、スキップします")
+        else:
+            channels.append(c)
+    if not channels:
+        print("送り先が設定されていないため、送信せず表示のみ")
+        print("\n-----\n".join(texts))
+        return
+
+    errors = []
+    for c in channels:
+        try:
+            {"line": _send_line_only, "discord": _send_discord}[c](texts)
+        except Exception as e:
+            print(f"{c} への送信に失敗しました: {e}")
+            errors.append(e)
+    if len(errors) == len(channels):                     # すべて失敗したときだけ、呼び出し側にエラーを返す
+        raise errors[0]
