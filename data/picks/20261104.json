@@ -370,5 +370,190 @@
     }
    }
   ]
+ },
+ {
+  "time": "20:03",
+  "session": "all",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026110238",
+    "day": 3,
+    "race": 3,
+    "axis": 1,
+    "axis_name": "長野魅切",
+    "partners": [
+     4,
+     5,
+     2
+    ],
+    "bet": "1→4,5,2 (2車単 軸流し)",
+    "score": 31.81,
+    "tri": {
+     "first": 1,
+     "second": [
+      4,
+      5
+     ],
+     "third": [
+      4,
+      5,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "2026110238",
+    "day": 3,
+    "race": 7,
+    "axis": 1,
+    "axis_name": "小玉拓真",
+    "partners": [
+     2,
+     4,
+     5
+    ],
+    "bet": "1→2,4,5 (2車単 軸流し)",
+    "score": 19.1,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026110284",
+    "day": 3,
+    "race": 5,
+    "axis": 1,
+    "axis_name": "戸田康平",
+    "partners": [
+     5,
+     4,
+     2
+    ],
+    "bet": "1→5,4,2 (2車単 軸流し)",
+    "score": 18.77,
+    "tri": {
+     "first": 1,
+     "second": [
+      5,
+      4
+     ],
+     "third": [
+      5,
+      4,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026110284",
+    "day": 3,
+    "race": 2,
+    "axis": 1,
+    "axis_name": "清水健次",
+    "partners": [
+     5
+    ],
+    "bet": "1→5 (2車単 交差決着)",
+    "score": 17.42,
+    "tri": {
+     "first": 1,
+     "second": [
+      5
+     ],
+     "third": [
+      5,
+      3,
+      2,
+      4
+     ],
+     "points": 3
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026110284",
+    "day": 3,
+    "race": 7,
+    "axis": 6,
+    "axis_name": "秋山貴宏",
+    "partners": [
+     3,
+     4
+    ],
+    "bet": "6→3,4 (2車単 番手狙い)",
+    "score": 16.97,
+    "tri": {
+     "first": 6,
+     "second": [
+      3,
+      4
+     ],
+     "third": [
+      3,
+      4,
+      1,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "2026110253",
+    "day": 3,
+    "race": 7,
+    "axis": 4,
+    "axis_name": "安部龍文",
+    "partners": [
+     1
+    ],
+    "bet": "4→1 (2車単 番手狙い)",
+    "score": 12.69,
+    "tri": {
+     "first": 4,
+     "second": [
+      1
+     ],
+     "third": [
+      1,
+      2,
+      3,
+      5
+     ],
+     "points": 3
+    }
+   }
+  ]
  }
 ]
