@@ -32,7 +32,8 @@ jobs:
       - run: python keirin_run.py
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          NOTIFY: discord          WORKERS: ${{ vars.WORKERS }}
+          NOTIFY: discord          
+          WORKERS: ${{ vars.WORKERS }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
           VENUES: ${{ vars.VENUES }}
           N_PICKS: ${{ vars.N_PICKS }}
