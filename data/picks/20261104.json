@@ -1,0 +1,189 @@
+[
+ {
+  "time": "11:58",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026110486",
+    "day": 1,
+    "race": 4,
+    "axis": 5,
+    "axis_name": "沢田桂太郎",
+    "partners": [
+     2,
+     7,
+     1
+    ],
+    "bet": "5→2,7,1 (2車単 軸流し)",
+    "score": 31.47,
+    "tri": {
+     "first": 5,
+     "second": [
+      2,
+      7
+     ],
+     "third": [
+      2,
+      7,
+      1,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "青森",
+    "venue_key": "aomori",
+    "cup": "2026110312",
+    "day": 2,
+    "race": 12,
+    "axis": 4,
+    "axis_name": "新山響平",
+    "partners": [
+     7,
+     1,
+     3
+    ],
+    "bet": "4→7,1,3 (2車単 軸流し)",
+    "score": 22.95,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "大宮",
+    "venue_key": "omiya",
+    "cup": "2026110425",
+    "day": 1,
+    "race": 8,
+    "axis": 5,
+    "axis_name": "中田健太",
+    "partners": [
+     4,
+     1,
+     7
+    ],
+    "bet": "5→4,1,7 (2車単 軸流し)",
+    "score": 18.52,
+    "tri": {
+     "first": 5,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "大宮",
+    "venue_key": "omiya",
+    "cup": "2026110425",
+    "day": 1,
+    "race": 5,
+    "axis": 4,
+    "axis_name": "高間悠平",
+    "partners": [
+     7,
+     5
+    ],
+    "bet": "4→7,5 (2車単 番手狙い)",
+    "score": 13.86,
+    "tri": {
+     "first": 4,
+     "second": [
+      7,
+      5
+     ],
+     "third": [
+      7,
+      5,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "豊橋",
+    "venue_key": "toyohashi",
+    "cup": "2026110245",
+    "day": 3,
+    "race": 9,
+    "axis": 5,
+    "axis_name": "片岡迪之",
+    "partners": [
+     1,
+     2
+    ],
+    "bet": "5→1,2 (2車単 番手狙い)",
+    "score": 13.31,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      4,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "豊橋",
+    "venue_key": "toyohashi",
+    "cup": "2026110245",
+    "day": 3,
+    "race": 6,
+    "axis": 2,
+    "axis_name": "小榑佑弥",
+    "partners": [
+     5
+    ],
+    "bet": "2→5 (2車単 先行狙い)",
+    "score": 12.25,
+    "tri": {
+     "first": 2,
+     "second": [
+      5
+     ],
+     "third": [
+      5,
+      7,
+      3,
+      4
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
