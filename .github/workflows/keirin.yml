@@ -32,7 +32,7 @@ jobs:
       - run: python keirin_run.py
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          NOTIFY: discord          
+          NOTIFY: discord
           WORKERS: ${{ vars.WORKERS }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
           VENUES: ${{ vars.VENUES }}
@@ -48,6 +48,12 @@ jobs:
           git add data docs
           if ! git diff --cached --quiet; then
             git commit -m "update picks"
-            git pull --rebase
-            git push
+            pushed=0
+            for i in 1 2 3 4 5; do
+              git pull --rebase
+              if git push; then pushed=1; break; fi
+              echo "push failed, retrying ($i/5)"
+              sleep $((i * 10))
+            done
+            if [ "$pushed" != "1" ]; then echo "push failed after 5 attempts"; exit 1; fi
           fi
