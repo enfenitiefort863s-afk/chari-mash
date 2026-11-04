@@ -28,7 +28,8 @@ jobs:
       - run: python keirin_alert.py
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          NOTIFY: discord          WORKERS: ${{ vars.WORKERS }}
+          NOTIFY: discord          
+          WORKERS: ${{ vars.WORKERS }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
       - name: Save data
         if: always()
