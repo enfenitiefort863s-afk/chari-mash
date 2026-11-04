@@ -82,31 +82,62 @@ MIN_THRESHOLD_ROWS = 60     # これ未満なら、まだしきい値を更新�
 TARGET_ROI = 120             # この回収率(%)を下回るスコア帯は、配信から外す候補にする(さらに絞り込み強め)
 
 
+LOOKBACK_PER_KIND = 400    # しきい値の学習に使う直近の件数(古い記録は薄れていく前提)
+MIN_VENUE_ROWS = 40         # 会場別のしきい値を作るのに必要な件数
+
+
+def _combined_cost(r):
+    return int(r["cost"] or 0) + int(r.get("t3_cost") or 0)
+
+
+def _combined_pay(r):
+    return int(r["payout"] or 0) + int(r.get("t3_payout") or 0)
+
+
+def _best_cutoff(rs, min_keep):
+    """スコア昇順の行リストから、回収率(2車単+3連単の合算)が目標を超える一番緩い下限を探す"""
+    for cut in range(0, 9):
+        keep = rs[int(len(rs) * cut / 10):]
+        if len(keep) < min_keep:
+            break
+        cost = sum(_combined_cost(r) for r in keep)
+        pay = sum(_combined_pay(r) for r in keep)
+        roi = (pay * 100 / cost) if cost else 0
+        if roi >= TARGET_ROI:
+            return round(float(keep[0]["score"]), 2)
+    return None
+
+
 def tune_thresholds():
     """results.csv(実際の的中・回収)から、本命/荒れそれぞれの
     『これ以上のスコアなら配信してよい』という下限値を求める。
-    スコアが低い順に少しずつ切り捨てながら、残りの回収率が目標を超える一番緩い所を探す"""
+    全体版に加えて、件数のたまった会場については会場別の下限値も作る。
+    どちらも直近 LOOKBACK_PER_KIND 件だけを使い、古い傾向に引きずられないようにする"""
     rows = [r for r in read_rows() if str(r.get("status")) == "ok" and r.get("score") not in (None, "")]
-    out = {}
+    out, out_venue = {}, {}
     for kind in ("honmei", "ara"):
-        rs = sorted((r for r in rows if r["kind"] == kind), key=lambda r: float(r["score"]))
-        if len(rs) < MIN_THRESHOLD_ROWS:
-            continue
-        best = None
-        # スコアの低いほうから2割ずつ切り捨てて、回収率が目標を超えたら、そこを下限にする
-        for cut in range(0, 9):
-            keep = rs[int(len(rs) * cut / 10):]
-            if len(keep) < MIN_THRESHOLD_ROWS // 2:
-                break
-            cost = sum(int(r["cost"] or 0) for r in keep)
-            pay = sum(int(r["payout"] or 0) for r in keep)
-            roi = (pay * 100 / cost) if cost else 0
-            if roi >= TARGET_ROI:
-                best = float(keep[0]["score"])
-                break
-        if best is not None:
-            out[kind] = round(best, 2)
-    return out
+        rs_all = [r for r in rows if r["kind"] == kind]
+        rs_all.sort(key=lambda r: r.get("date", ""), reverse=True)   # 新しい順
+        rs_recent = rs_all[:LOOKBACK_PER_KIND]
+        rs = sorted(rs_recent, key=lambda r: float(r["score"]))
+        if len(rs) >= MIN_THRESHOLD_ROWS:
+            best = _best_cutoff(rs, MIN_THRESHOLD_ROWS // 2)
+            if best is not None:
+                out[kind] = best
+        # 会場別(同じ kind の中での偏りを見る)
+        by_v = {}
+        for r in rs_recent:
+            by_v.setdefault(r.get("venue_key", ""), []).append(r)
+        per_venue = {}
+        for v, vrs in by_v.items():
+            if v and len(vrs) >= MIN_VENUE_ROWS:
+                best = _best_cutoff(sorted(vrs, key=lambda r: float(r["score"])),
+                                    MIN_VENUE_ROWS // 2)
+                if best is not None:
+                    per_venue[v] = best
+        if per_venue:
+            out_venue[kind] = per_venue
+    return out, out_venue
 
 
 # ---------------- 会場ごとの決まり手(戦術)の集計 ----------------
@@ -203,12 +234,15 @@ def main():
         model["men"] = men_w or model.get("men") or PRIOR_WEIGHTS
         model["girls"] = girls_w or model.get("girls") or PRIOR_WEIGHTS
 
-    thresholds = tune_thresholds()
+    thresholds, thresholds_venue = tune_thresholds()
     if thresholds:
         model["min_score"] = thresholds
         print("スコアのしきい値を更新しました:", thresholds)
     else:
         print("しきい値の学習には、まだ判定済みのレースが足りません")
+    if thresholds_venue:
+        model["min_score_venue"] = thresholds_venue
+        print("会場別のしきい値を更新しました:", thresholds_venue)
 
     if rows and results:
         update_kimarite_stats(rows, results)
