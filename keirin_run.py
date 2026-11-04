@@ -1,6 +1,8 @@
 # 定時配信の入口。
-# LINEには「おすすめレース」の一覧だけを短く送り、展開予想・買い目などの詳細は
-# ページ(GitHub Pages)に載せて、そのURLをLINEから案内する。
+# Discordにはフル版(おすすめレース+ピックアップ選手+展開予想・買い目)を
+# 分割して全部送る(2026-11-04 ユーザー決定)。送信時の分割は keirin_line 側が行う。
+# LINE宛ての場合のみ、従来通り「収まらなければ短縮版+ページURL」にする。
+# 詳細は常にページ(GitHub Pages)にも載せる。
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -15,6 +17,28 @@ from keirin_track import JST, save_learn_rows, save_picks, session_already_sent
 VENUES = [v.strip() for v in (os.environ.get("VENUES") or "").split(",") if v.strip()]
 SESSION = os.environ.get("SESSION") or "all"   # day:通常開催のみ / midnight:ミッドナイトのみ / all:両方
 N_PICKS = int(os.environ.get("N_PICKS") or 3)  # 本命・荒れ、それぞれ何レース選ぶか(絞り込み優先で少なめ)
+
+
+def discord_targeted():
+    """送り先にDiscordが含まれるか。keirin_line.send_line の振り分けと同じ規則:
+    NOTIFYで指定があればその指定に従い、未指定ならWebhook URLが設定済みならDiscord宛てあり"""
+    wanted = [c.strip().lower() for c in (os.environ.get("NOTIFY") or "").split(",") if c.strip()]
+    if wanted:
+        return "discord" in wanted
+    return bool(os.environ.get("DISCORD_WEBHOOK_URL"))
+
+
+def choose_notify_text(full_text, honmei, ara, url):
+    """配信する文面を決める。Discord宛てはフル版をそのまま(分割は送信側)。
+    LINE宛てのみ、フル版が上限を超える日は短縮版+URLにする"""
+    if discord_targeted():
+        print(f"Discord宛て: フル版を分割して送信します({k.line_len(full_text)}文字)")
+        return full_text
+    if k.line_len(full_text) <= k.LINE_LIMIT:
+        print(f"フル版がLINEの上限に収まるため、そのまま送信します({k.line_len(full_text)}文字)")
+        return full_text
+    print(f"フル版が長すぎるため、短縮版+URLで送信します(フル版{k.line_len(full_text)}文字)")
+    return k.build_short_message(honmei, ara, url)
 
 
 # ---------------- 選手ページの取得(上位選手だけ) ----------------
@@ -128,24 +152,16 @@ def main():
 
     url = k.page_url()
     full_text = k.build_message(honmei, ara, level=3, enforce_limit=False)   # ページ用(フル)
-
-    # 件数が少なく、フル版がLINEの上限に収まるなら、そのままLINEに送る。
-    # 収まらない日だけ、短縮版(おすすめ一覧+URL)にする
-    if k.line_len(full_text) <= k.LINE_LIMIT:
-        line_text = full_text
-        print(f"フル版がLINEの上限に収まるため、そのまま送信します({k.line_len(full_text)}文字)")
-    else:
-        line_text = k.build_short_message(honmei, ara, url)
-        print(f"フル版が長すぎるため、短縮版+URLで送信します(フル版{k.line_len(full_text)}文字)")
+    line_text = choose_notify_text(full_text, honmei, ara, url)
 
     try:
         kw.publish(full_text, label="予想配信")
     except Exception as e:
-        print("ページの更新に失敗(LINE配信は続けます):", e)
+        print("ページの更新に失敗(配信は続けます):", e)
     try:
         send_line(line_text)
     except Exception as e:
-        print("LINE送信に失敗しました(ページには反映済みです):", e)
+        print("送信に失敗しました(ページには反映済みです):", e)
 
     save_picks(honmei, ara, results, session=SESSION)
     try:
