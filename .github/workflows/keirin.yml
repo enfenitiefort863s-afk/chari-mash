@@ -31,9 +31,8 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python keirin_run.py
         env:
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-          WORKERS: ${{ vars.WORKERS }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          NOTIFY: discord          WORKERS: ${{ vars.WORKERS }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
           VENUES: ${{ vars.VENUES }}
           N_PICKS: ${{ vars.N_PICKS }}
