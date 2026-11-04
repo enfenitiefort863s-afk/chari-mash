@@ -1,4 +1,4 @@
-# 競輪 出走表取得 + 本命/荒れ分析 + LINE配信
+ 競輪 出走表取得 + 本命/荒れ分析 + LINE配信
 # 必要: requests, beautifulsoup4 (Colabには入っています)
 import json
 import os
@@ -512,6 +512,21 @@ def load_min_score(path=None):
 
 
 MIN_SCORE = load_min_score()
+
+
+def load_min_score_venue(path=None):
+    """会場別に学習したスコアの下限値。無い会場は全体の下限値を使う"""
+    try:
+        with open(path or MODEL_PATH, encoding="utf-8") as f:
+            m = json.load(f)
+        raw = m.get("min_score_venue") or {}
+        return {kind: {v: float(t) for v, t in (per or {}).items()}
+                for kind, per in raw.items()}
+    except Exception:
+        return {}
+
+
+MIN_SCORE_VENUE = load_min_score_venue()
 
 
 def rider_feats(r):
@@ -1188,16 +1203,99 @@ def forecast_pickup_lines(honmei, ara, limit=3):
     return out
 
 
+def _short_name(name):
+    return (name or "").split()[0]
+
+
+def smart_flow_lines(x, kind):
+    """展開予想(スマート版): 主力ラインを役割チェーンで見せ、結論を1文に絞る"""
+    by_car = x["by_car"]
+    lines = [ln for ln in (x.get("lines") or []) if any(c in by_car for c in ln)]
+    if not lines:
+        return ["🔮展開：ライン無し。個人の力量と位置取り勝負"]
+    multi = [ln for ln in lines if len(ln) >= 2]
+    ranked = sorted(multi or lines, key=lambda ln: -line_strength(ln, by_car))
+    main = ranked[0]
+    roles = ["先行", "番手", "3番手", "4番手", "5番手"]
+    chain = []
+    for i, car in enumerate(main):
+        r = by_car.get(car) or {}
+        role = roles[i] if i < len(roles) else f"{i + 1}番手"
+        if i == 0 and r.get("脚") != "逃":
+            role = "先頭"
+        chain.append(f"{circ(car)}{_short_name(r.get('name', ''))}({role})")
+    out = ["🔮展開：" + " → ".join(chain)]
+    axis = x[f"{kind}_axis"]
+    head = by_car.get(main[0]) or {}
+    n_front = sum(1 for r in by_car.values() if r.get("脚") == "逃")
+    if n_front >= 3:
+        pace = "先行争いでペースは速め"
+    elif n_front == 0:
+        pace = "先行不在でペースは落ち着く"
+    else:
+        pace = f"主導権は{circ(main[0])}{_short_name(head.get('name', ''))}"
+    if axis == main[0]:
+        win = f"◎{circ(axis)}が先行して押し切る形"
+    elif len(main) >= 2 and axis == main[1]:
+        win = f"◎{circ(axis)}が番手から差す形"
+    elif axis in main:
+        win = f"◎{circ(axis)}がライン後方から差し込む形"
+    elif any(axis == ln[0] for ln in lines):
+        win = f"◎{circ(axis)}が別ラインの先頭から捲る形"
+    else:
+        win = f"◎{circ(axis)}は単騎で捲り・差し狙い"
+    out.append(f"　{pace}。{win}")
+    if len(ranked) >= 2 and len(ranked[1]) >= 2:
+        out.append("　対抗：" + "-".join(circ(c) for c in ranked[1]) + "ライン")
+    return out
+
+
+def smart_race_block(x, kind, level=3):
+    """1レースのスマート版ブロック: 見出し→並び→展開→選手(評価順)→買い目→一言"""
+    score = x["honmei"] if kind == "honmei" else x["ara"]
+    label = "🎯本命" if kind == "honmei" else "🌪荒れ"
+    out = [f"🏁 {VENUE_JP.get(x['venue'], x['venue'])}{x['race']}R "
+           f"⏰{fmt_time(x.get('deadline'))} {label} {stars(score)}"]
+    if x.get("lines"):
+        out.append("並び：" + " ｜ ".join(
+            "-".join(circ(c) for c in ln) for ln in x["lines"]))
+    out += smart_flow_lines(x, kind)
+    axis = x[f"{kind}_axis"]
+    partners = x[f"{kind}_partners"]
+    riders = sorted(x["by_car"].items(), key=lambda kv: -(kv[1].get("rating") or 0))[:5]
+    for car, r in riders:
+        m = "◎" if car == axis else ("○" if partners and car == partners[0] else
+                                      ("▲" if car in partners else "　"))
+        s = f"{m}{circ(car)} {r['name']}（{r['脚']}） 評価{r['rating']:.0f}"
+        form = r.get("form") or {}
+        if level >= 2 and form.get("n"):
+            s += f"｜3着内{form['top3'] * 100:.0f}%"
+        out.append(s)
+    if partners:
+        out.append(f"**2車単：{circ(axis)}→{''.join(circ(c) for c in partners)}**")
+    tri = x.get(f"{kind}_tri")
+    if tri:
+        out.append(f"**3連単：{circ(tri['first'])}→"
+                   f"{''.join(circ(c) for c in tri['second'])}→"
+                   f"{''.join(circ(c) for c in tri['third'])}（{tri['points']}点）**")
+    verdict = x.get(f"{kind}_verdict")
+    if verdict:
+        out.append(f"💬 {verdict}")
+    return "\n".join(out)
+
+
 def build_message(honmei, ara, level=3, enforce_limit=True):
-    """展開予想・買い目まで含めたフル版。LINEには使わず、ページ(GitHub Pages)用に使う"""
+    """スマート版フル文面。Discord配信とページ(GitHub Pages)に使う"""
     jst = datetime.now(timezone(timedelta(hours=9)))
     picks = sort_picks(honmei, ara)
-    out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
+    out = [f"🏇 **本日のおすすめ**（{jst.month}/{jst.day} {jst.hour}:{jst.minute:02d}時点）", ""]
     out += pick_list(picks, True)
     out += forecast_pickup_lines(honmei, ara)
+    out.append("")
     for kind, x in picks:
-        out.append(race_block(x, kind, 1, level))
-    out += ["", "", footer()]
+        out.append(smart_race_block(x, kind, level))
+        out.append("")
+    out.append("※参考情報です。的中や回収を保証するものではありません。")
     msg = "\n".join(out)
     if enforce_limit and line_len(msg) > LINE_LIMIT and level > 0:
         return build_message(honmei, ara, level - 1, enforce_limit)
