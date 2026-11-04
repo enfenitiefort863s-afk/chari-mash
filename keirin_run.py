@@ -1,4 +1,4 @@
-# 定時配信の入口。
+ 定時配信の入口。
 # Discordにはフル版(おすすめレース+ピックアップ選手+展開予想・買い目)を
 # 分割して全部送る(2026-11-04 ユーザー決定)。送信時の分割は keirin_line 側が行う。
 # LINE宛ての場合のみ、従来通り「収まらなければ短縮版+ページURL」にする。
@@ -83,15 +83,20 @@ def apply_min_score(honmei, ara):
     1) 実際の的中率・回収率から学習したしきい値(60件たまってから有効)
     2) それとは別に、星の数が一定未満のものは常に外す(データが少ないうちの安全弁)
     どちらも、全部外すと0件になる場合は、念のため一番上のものだけ残す"""
-    def filter_by(xs, kind, min_learned):
-        kept = xs
-        if min_learned is not None:
-            kept = [x for x in kept if x[kind] >= min_learned]
+    def threshold_for(x, kind):
+        per_venue = (k.MIN_SCORE_VENUE or {}).get(kind) or {}
+        if x.get("venue") in per_venue:
+            return per_venue[x["venue"]]     # 会場別の学習値があればそちらを優先
+        return k.MIN_SCORE.get(kind)
+
+    def filter_by(xs, kind):
+        kept = [x for x in xs
+                if threshold_for(x, kind) is None or x[kind] >= threshold_for(x, kind)]
         kept2 = [x for x in kept if k.stars(x[kind]).count("★") >= MIN_STARS]
         return kept2 or kept or xs[:1]
 
-    honmei = filter_by(honmei, "honmei", k.MIN_SCORE.get("honmei"))
-    ara = filter_by(ara, "ara", k.MIN_SCORE.get("ara"))
+    honmei = filter_by(honmei, "honmei")
+    ara = filter_by(ara, "ara")
     return honmei, ara
 
 
