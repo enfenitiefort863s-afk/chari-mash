@@ -1,0 +1,24 @@
+{
+ "n_races": 984,
+ "men": {
+  "t3": 2.57,
+  "jiriki": 2.42,
+  "mark": 1.56,
+  "pos_follow": 2.7,
+  "pos_local": 1.06,
+  "jump": 1.5,
+  "pos_drop": 1.56
+ },
+ "girls": {
+  "t3": 3.73,
+  "jiriki": 2.75,
+  "mark": 1.53,
+  "pos_follow": 2.5,
+  "pos_local": 1.0,
+  "jump": 1.5,
+  "pos_drop": 1.5
+ },
+ "min_score": {
+  "ara": 16.43
+ }
+}
