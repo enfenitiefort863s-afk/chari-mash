@@ -1,6 +1,6 @@
-#定時配信の入口。
-# Discordにはフル版(おすすめレース+ピックアップ選手+展開予想・買い目)を
-# 分割して全部送る(2026-11-04 ユーザー決定)。送信時の分割は keirin_line 側が行う。
+# 定時配信の入口。
+# DiscordにはEmbed(カード形式)で送る(2026-11-05 ユーザー決定)。
+# テキストのフル版はページ(GitHub Pages)用にそのまま使う。
 # LINE宛ての場合のみ、従来通り「収まらなければ短縮版+ページURL」にする。
 # 詳細は常にページ(GitHub Pages)にも載せる。
 import os
@@ -157,14 +157,13 @@ def main():
 
     url = k.page_url()
     full_text = k.build_message(honmei, ara, level=3, enforce_limit=False)   # ページ用(フル)
-    line_text = choose_notify_text(full_text, honmei, ara, url)
 
     try:
         kw.publish(full_text, label="予想配信")
     except Exception as e:
         print("ページの更新に失敗(配信は続けます):", e)
     try:
-        send_line(line_text)
+        k.send_forecast(honmei, ara, full_text, url)   # Discord宛てはEmbed(カード形式)で送る
     except Exception as e:
         print("送信に失敗しました(ページには反映済みです):", e)
 
