@@ -1,7 +1,9 @@
 # 配信時に保存した特徴量(data/learn/*.jsonl)と、実際のレース結果から
 # 評価点の重み(data/model.json)を学習し直す。
-# 考え方: 各特徴量について「1着になった選手の平均値」と「1着にならなかった選手の平均値」の
+# 考え方: 各特徴量について「入着した選手の平均値」と「着外選手の平均値」の
 # 差を求め、その差が大きいほど重みを上げる、単純な統計的な学習(ロジスティック回帰の簡易版)。
+# 入着側は着順で重み付けする(1着=1.0 / 2着=0.6 / 3着=0.3)。以前は1着しか見ておらず、
+# 1レースから拾える情報が少なかった(2026-11-05 改善)。
 import json
 import os
 import time
@@ -36,7 +38,7 @@ def load_learn_rows(days=LOOKBACK_DAYS):
 
 
 def fetch_result(row):
-    """レースキー(venue-cup-day-race)から結果ページを取り、(1着の車番, 決まり手の文字) を返す"""
+    """レースキー(venue-cup-day-race)から結果ページを取り、(着順dict{車番:着順}, 決まり手の文字) を返す"""
     try:
         venue, cup, day, race = row["k"].split("-", 3)
     except ValueError:
@@ -49,30 +51,36 @@ def fetch_result(row):
     res = parse_result(html)
     if not res:
         return None, ""
-    first = next((car for car, o in res["orders"].items() if o == 1), None)
-    return first, res.get("kimarite", "")
+    return res["orders"], res.get("kimarite", "")
+
+
+POS_WEIGHTS = {1: 1.0, 2: 0.6, 3: 0.3}   # 学習シグナル: 着順ごとの重み(1着だけでなく2・3着も使う)
 
 
 def learn_weights(keys, rows):
-    """特徴量ごとに、1着車と非1着車の平均差を求め、初期値に足して新しい重みにする"""
-    sums1 = {k: 0.0 for k in keys}
-    sums0 = {k: 0.0 for k in keys}
-    n1 = n0 = 0
-    for row, first in rows:
+    """特徴量ごとに、入着した選手(着順で重み付けした平均)と着外選手の平均の差を求め、
+    初期値に足して新しい重みにする"""
+    sums_p = {k: 0.0 for k in keys}     # 入着側(着順で重み付け)
+    sums0 = {k: 0.0 for k in keys}      # 着外側
+    wp = 0.0
+    n0 = 0
+    for row, orders in rows:
         for car, score, feats in row["r"]:
-            is1 = (car == first)
+            w = POS_WEIGHTS.get(orders.get(car), 0.0)
             for i, k in enumerate(keys):
-                if is1:
-                    sums1[k] += feats[i]
+                fv = feats[i] if i < len(feats) else 0.0   # 古い行は特徴量が少ないことがある(欠けは平均0として扱う)
+                if w:
+                    sums_p[k] += fv * w
                 else:
-                    sums0[k] += feats[i]
-            n1 += is1
-            n0 += (not is1)
-    if n1 < 20 or n0 < 20:
+                    sums0[k] += fv
+            wp += w
+            if not w:
+                n0 += 1
+    if wp < 20 or n0 < 20:
         return None
     weights = {}
     for k in keys:
-        diff = sums1[k] / n1 - sums0[k] / n0     # 1着と非1着で、この特徴量がどれだけ違うか
+        diff = sums_p[k] / wp - sums0[k] / n0     # 入着と着外で、この特徴量がどれだけ違うか
         weights[k] = round(max(0.0, min(4.0, PRIOR_WEIGHTS[k] + diff * 3)), 2)
     return weights
 
@@ -177,7 +185,8 @@ def update_kimarite_stats(rows, results):
     except Exception:
         stats = {}
     added = 0
-    for row, (first, kimarite) in zip(rows, results):
+    for row, (orders, kimarite) in zip(rows, results):
+        first = next((car for car, o in (orders or {}).items() if o == 1), None)
         if first is None:
             continue
         venue = row.get("v") or row["k"].split("-", 1)[0]
@@ -212,10 +221,10 @@ def main():
     if rows:
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             results = list(ex.map(fetch_result, rows))
-        for row, (first, kimarite) in zip(rows, results):
-            if first is None:
+        for row, (orders, kimarite) in zip(rows, results):
+            if not orders:
                 continue
-            (girls_rows if row.get("g") else men_rows).append((row, first))
+            (girls_rows if row.get("g") else men_rows).append((row, orders))
         print(f"結果が判明: 男子{len(men_rows)}レース / ガールズ{len(girls_rows)}レース")
 
     men_w = learn_weights(LEARN_KEYS, men_rows) if len(men_rows) >= MIN_RACES else None
