@@ -1,4 +1,4 @@
- 競輪 出走表取得 + 本命/荒れ分析 + LINE配信
+#競輪 出走表取得 + 本命/荒れ分析 + LINE配信
 # 必要: requests, beautifulsoup4 (Colabには入っています)
 import json
 import os
