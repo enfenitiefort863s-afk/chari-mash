@@ -1,4 +1,4 @@
-#競輪 出走表取得 + 本命/荒れ分析 + LINE配信
+# 競輪 出走表取得 + 本命/荒れ分析 + LINE配信
 # 必要: requests, beautifulsoup4 (Colabには入っています)
 import json
 import os
@@ -1317,6 +1317,111 @@ def build_short_message(honmei, ara, url=None):
     return "\n".join(out)
 
 
+# ---------------- Discord Embed(カード形式) ----------------
+# テキストの羅列ではなく、色帯つきのカードで届ける(2026-11-05 ユーザー決定)。
+# Discordの上限: 1回の送信でEmbed最大10枚 / 合計6000文字 / フィールド値1024文字。
+EMBED_COLORS = {"header": 0x3498DB, "pickup": 0xF1C40F,
+                "honmei": 0x2ECC71, "ara": 0xE67E22}
+EMBED_TOTAL_LIMIT = 5500   # 合計上限6000に余裕を持たせた値
+
+
+def _fit_field(v, limit=1024):
+    return v if len(v) <= limit else v[:limit - 1] + "…"
+
+
+def smart_race_embed(x, kind):
+    """1レース分のEmbed(カード)。中身はスマート版テキストと同じ部品から作る"""
+    score = x["honmei"] if kind == "honmei" else x["ara"]
+    label = "🎯本命" if kind == "honmei" else "🌪荒れ"
+    fields = []
+    if x.get("lines"):
+        fields.append({"name": "並び", "inline": False, "value": _fit_field(" ｜ ".join(
+            "-".join(circ(c) for c in ln) for ln in x["lines"]))})
+    flow = smart_flow_lines(x, kind)
+    if flow:
+        flow = [flow[0].replace("🔮展開：", "", 1)] + flow[1:]
+        fields.append({"name": "🔮展開", "inline": False,
+                       "value": _fit_field("\n".join(flow))})
+    axis = x[f"{kind}_axis"]
+    partners = x[f"{kind}_partners"]
+    riders = sorted(x["by_car"].items(), key=lambda kv: -(kv[1].get("rating") or 0))[:5]
+    rlines = []
+    for car, r in riders:
+        m = "◎" if car == axis else ("○" if partners and car == partners[0] else
+                                      ("▲" if car in partners else "・"))
+        s = f"{m}{circ(car)} {r['name']}（{r['脚']}） 評価{r['rating']:.0f}"
+        form = r.get("form") or {}
+        if form.get("n"):
+            s += f"｜3着内{form['top3'] * 100:.0f}%"
+        rlines.append(s)
+    if rlines:
+        fields.append({"name": "選手", "inline": False,
+                       "value": _fit_field("\n".join(rlines))})
+    bets = []
+    if partners:
+        bets.append(f"**2車単：{circ(axis)}→{''.join(circ(c) for c in partners)}**")
+    tri = x.get(f"{kind}_tri")
+    if tri:
+        bets.append(f"**3連単：{circ(tri['first'])}→"
+                    f"{''.join(circ(c) for c in tri['second'])}→"
+                    f"{''.join(circ(c) for c in tri['third'])}（{tri['points']}点）**")
+    if bets:
+        fields.append({"name": "🎫買い目", "inline": False,
+                       "value": _fit_field("\n".join(bets))})
+    verdict = x.get(f"{kind}_verdict")
+    if verdict:
+        fields.append({"name": "💬一言", "inline": False, "value": _fit_field(verdict)})
+    return {
+        "title": f"🏁 {VENUE_JP.get(x['venue'], x['venue'])}{x['race']}R "
+                 f"⏰{fmt_time(x.get('deadline'))} {label} {stars(score)}",
+        "color": EMBED_COLORS[kind],
+        "fields": fields,
+    }
+
+
+def build_forecast_embeds(honmei, ara):
+    """予想配信のEmbed一式: ヘッダー＋ピックアップ＋レースごとのカード"""
+    jst = datetime.now(timezone(timedelta(hours=9)))
+    picks = sort_picks(honmei, ara)
+    embeds = [{
+        "title": f"🏇 本日のおすすめ（{jst.month}/{jst.day} {jst.hour}:{jst.minute:02d}時点）",
+        "color": EMBED_COLORS["header"],
+        "description": "\n".join(pick_list(picks, True)[1:]),
+    }]
+    pickup = forecast_pickup_lines(honmei, ara)
+    if len(pickup) > 2:
+        embeds.append({
+            "title": "⭐ 本日のピックアップ選手",
+            "color": EMBED_COLORS["pickup"],
+            "description": "\n".join(pickup[2:]),
+        })
+    for kind, x in picks:
+        embeds.append(smart_race_embed(x, kind))
+    return embeds
+
+
+def _embed_chars(e):
+    n = len(e.get("title", "")) + len(e.get("description", ""))
+    for f in e.get("fields", []):
+        n += len(f.get("name", "")) + len(f.get("value", ""))
+    return n
+
+
+def chunk_embeds(embeds, max_count=10, max_chars=EMBED_TOTAL_LIMIT):
+    """Embedを、1回の送信に収まる(最大10枚・合計文字数以内)グループに分ける"""
+    groups, cur, total = [], [], 0
+    for e in embeds:
+        c = _embed_chars(e)
+        if cur and (len(cur) >= max_count or total + c > max_chars):
+            groups.append(cur)
+            cur, total = [], 0
+        cur.append(e)
+        total += c
+    if cur:
+        groups.append(cur)
+    return groups
+
+
 def line_position_labels(lines):
     """並び予想から、車番ごとの位置(1=先頭 2=番手 3=3番手以降 0=単騎/ライン無し)を返す"""
     labels = {}
@@ -1432,13 +1537,33 @@ def _send_discord(texts):
         time.sleep(0.4)
 
 
-def send_line(texts):
-    """配信の入口(名前は昔のまま)。設定されている送り先すべてに送る。
-    送り先は環境変数 NOTIFY で絞れる(例: line / discord / line,discord)。
-    未設定なら、LINEのトークン・DiscordのWebhook URLのうち、設定済みのものすべてに送る。
-    片方が失敗してももう片方は送り、すべて失敗したときだけエラーにする"""
-    if isinstance(texts, str):
-        texts = [texts]
+def _send_discord_embeds(embeds):
+    """Embed(カード)をWebhookに送る。429のときは少し待ってやり直す"""
+    url = os.environ["DISCORD_WEBHOOK_URL"]
+    groups = chunk_embeds(embeds)
+    for gi, group in enumerate(groups):
+        payload = {"embeds": group, "username": "マッシュチャリンコ",
+                   "allowed_mentions": {"parse": []}}
+        if gi == len(groups) - 1:
+            payload["content"] = "※参考情報です。的中や回収を保証するものではありません。"
+        for _ in range(3):                               # 送りすぎの制限(429)のときは、少し待ってやり直す
+            r = requests.post(url, json=payload, timeout=20)
+            if r.status_code == 429:
+                try:
+                    wait = float(r.json().get("retry_after", 1))
+                except Exception:
+                    wait = 1.0
+                time.sleep(min(wait, 10))
+                continue
+            break
+        print("Discord(embed):", r.status_code)
+        r.raise_for_status()
+        time.sleep(0.4)
+
+
+def notify_channels():
+    """実際に送れる送り先の一覧を返す。NOTIFYで指定があればその指定に従い、
+    未指定ならトークン/URLが設定済みのものすべて"""
     configured = {
         "line": bool(os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")),
         "discord": bool(os.environ.get("DISCORD_WEBHOOK_URL")),
@@ -1452,6 +1577,42 @@ def send_line(texts):
             print(f"{c} は指定されていますが、トークン/URLが未設定のため、スキップします")
         else:
             channels.append(c)
+    return channels
+
+
+def send_forecast(honmei, ara, full_text, url):
+    """予想配信の送信。Discord宛てはEmbed(カード形式)、LINE宛ては従来のテキスト
+    (フル版が上限を超える日は短縮版+URL)。ページには常にフル版テキストを使う。
+    片方が失敗してももう片方は送り、すべて失敗したときだけエラーにする"""
+    channels = notify_channels()
+    if not channels:
+        print("送り先が設定されていないため、送信せず表示のみ")
+        print(full_text)
+        return
+    errors = []
+    for c in channels:
+        try:
+            if c == "discord":
+                _send_discord_embeds(build_forecast_embeds(honmei, ara))
+            else:
+                text = full_text if line_len(full_text) <= LINE_LIMIT \
+                    else build_short_message(honmei, ara, url)
+                _send_line_only([text])
+        except Exception as e:
+            print(f"{c} への送信に失敗しました: {e}")
+            errors.append(e)
+    if len(errors) == len(channels):                     # すべて失敗したときだけ、呼び出し側にエラーを返す
+        raise errors[0]
+
+
+def send_line(texts):
+    """配信の入口(名前は昔のまま)。設定されている送り先すべてに送る。
+    送り先は環境変数 NOTIFY で絞れる(例: line / discord / line,discord)。
+    未設定なら、LINEのトークン・DiscordのWebhook URLのうち、設定済みのものすべてに送る。
+    片方が失敗してももう片方は送り、すべて失敗したときだけエラーにする"""
+    if isinstance(texts, str):
+        texts = [texts]
+    channels = notify_channels()
     if not channels:
         print("送り先が設定されていないため、送信せず表示のみ")
         print("\n-----\n".join(texts))
