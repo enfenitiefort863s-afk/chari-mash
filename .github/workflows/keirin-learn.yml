@@ -1,0 +1,43 @@
+name: keirin-learn
+
+on:
+  schedule:
+    # 日本時間 23:50(結果報告のあと)
+    - cron: "50 14 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  learn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+      - run: python keirin_learn.py
+        env:
+          WORKERS: ${{ vars.WORKERS }}
+      - name: Save data
+        if: always()
+        run: |
+          mkdir -p data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if ! git diff --cached --quiet; then
+            git commit -m "update model weights"
+            pushed=0
+            for i in 1 2 3 4 5; do
+              git pull --rebase
+              if git push; then pushed=1; break; fi
+              echo "push failed, retrying ($i/5)"
+              sleep $((i * 10))
+            done
+            if [ "$pushed" != "1" ]; then echo "push failed after 5 attempts"; exit 1; fi
+          fi
