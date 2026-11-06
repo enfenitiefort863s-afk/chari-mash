@@ -1,0 +1,131 @@
+[
+ {
+  "time": "12:05",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "別府",
+    "venue_key": "beppu",
+    "cup": "2026110486",
+    "day": 3,
+    "race": 4,
+    "axis": 6,
+    "axis_name": "山田南",
+    "partners": [
+     3,
+     4,
+     5
+    ],
+    "bet": "6→3,4,5 (2車単 軸流し)",
+    "score": 43.47,
+    "tri": {
+     "first": 6,
+     "second": [
+      3,
+      4
+     ],
+     "third": [
+      3,
+      4,
+      5,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026110687",
+    "day": 1,
+    "race": 4,
+    "axis": 5,
+    "axis_name": "藤田楓",
+    "partners": [
+     1,
+     7,
+     2
+    ],
+    "bet": "5→1,7,2 (2車単 軸流し)",
+    "score": 39.21,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      2,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "四日市",
+    "venue_key": "yokkaichi",
+    "cup": "2026110548",
+    "day": 2,
+    "race": 5,
+    "axis": 3,
+    "axis_name": "渡邉一成",
+    "partners": [
+     9,
+     1,
+     2
+    ],
+    "bet": "3→9,1,2 (2車単 軸流し)",
+    "score": 26.86,
+    "tri": {
+     "first": 3,
+     "second": [
+      9,
+      1
+     ],
+     "third": [
+      9,
+      1,
+      2,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "四日市",
+    "venue_key": "yokkaichi",
+    "cup": "2026110548",
+    "day": 2,
+    "race": 8,
+    "axis": 8,
+    "axis_name": "城戸俊潔",
+    "partners": [
+     4,
+     1
+    ],
+    "bet": "8→4,1 (2車単 番手狙い)",
+    "score": 14.73,
+    "tri": {
+     "first": 8,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
