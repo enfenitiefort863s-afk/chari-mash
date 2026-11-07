@@ -570,3 +570,5 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261106-honmei-beppu-4,20261106,12:05,honmei,別府,beppu,4,6,山田南,3-4-5,43.47,1,6,1,4,逃,0,300,0,ok,0,600,0
 20261106-honmei-yokkaichi-5,20261106,12:05,honmei,四日市,yokkaichi,5,3,渡邉一成,9-1-2,26.86,3,1,8,3,差,0,300,0,ok,0,600,0
 20261106-ara-yokkaichi-8,20261106,12:05,ara,四日市,yokkaichi,8,8,城戸俊潔,4-1,14.73,2,7,8,1,捲,0,200,0,ok,0,600,0
+20261107-honmei-kochi-4,20261107,11:31,honmei,高知,kochi,4,1,安達光伸,5-6-3,25.76,1,1,5,6,逃,1,300,170,ok,1,600,860
+20261107-honmei-yahiko-4,20261107,11:31,honmei,弥彦,yahiko,4,2,福田海響,5-4-7,25.32,1,2,3,7,逃,0,300,0,ok,0,600,0
