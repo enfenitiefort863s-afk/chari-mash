@@ -1,0 +1,129 @@
+[
+ {
+  "time": "11:31",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "弥彦",
+    "venue_key": "yahiko",
+    "cup": "2026110721",
+    "day": 1,
+    "race": 6,
+    "axis": 5,
+    "axis_name": "梅川風子",
+    "partners": [
+     4,
+     1,
+     6
+    ],
+    "bet": "5→4,1,6 (2車単 軸流し)",
+    "score": 31.37,
+    "tri": {
+     "first": 5,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      6,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "高知",
+    "venue_key": "kochi",
+    "cup": "2026110774",
+    "day": 1,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "安達光伸",
+    "partners": [
+     5,
+     6,
+     3
+    ],
+    "bet": "1→5,6,3 (2車単 軸流し)",
+    "score": 25.76,
+    "tri": {
+     "first": 1,
+     "second": [
+      5,
+      6
+     ],
+     "third": [
+      5,
+      6,
+      3,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "弥彦",
+    "venue_key": "yahiko",
+    "cup": "2026110721",
+    "day": 1,
+    "race": 4,
+    "axis": 2,
+    "axis_name": "福田海響",
+    "partners": [
+     5,
+     4,
+     7
+    ],
+    "bet": "2→5,4,7 (2車単 軸流し)",
+    "score": 25.32,
+    "tri": {
+     "first": 2,
+     "second": [
+      5,
+      4
+     ],
+     "third": [
+      5,
+      4,
+      7,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "高知",
+    "venue_key": "kochi",
+    "cup": "2026110774",
+    "day": 1,
+    "race": 12,
+    "axis": 4,
+    "axis_name": "嶋津拓弥",
+    "partners": [
+     1
+    ],
+    "bet": "4→1 (2車単 番手狙い)",
+    "score": 13.57,
+    "tri": {
+     "first": 4,
+     "second": [
+      1
+     ],
+     "third": [
+      1,
+      2,
+      5,
+      3
+     ],
+     "points": 3
+    }
+   }
+  ]
+ }
+]
