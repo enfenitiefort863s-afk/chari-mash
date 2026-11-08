@@ -1,0 +1,161 @@
+[
+ {
+  "time": "11:01",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "四日市",
+    "venue_key": "yokkaichi",
+    "cup": "2026110548",
+    "day": 4,
+    "race": 1,
+    "axis": 7,
+    "axis_name": "渡邉一成",
+    "partners": [
+     3,
+     1,
+     5
+    ],
+    "bet": "7→3,1,5 (2車単 軸流し)",
+    "score": 36.37,
+    "tri": {
+     "first": 7,
+     "second": [
+      3,
+      1
+     ],
+     "third": [
+      3,
+      1,
+      5,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "弥彦",
+    "venue_key": "yahiko",
+    "cup": "2026110721",
+    "day": 2,
+    "race": 6,
+    "axis": 3,
+    "axis_name": "梅川風子",
+    "partners": [
+     7,
+     5,
+     1
+    ],
+    "bet": "3→7,5,1 (2車単 軸流し)",
+    "score": 28.29,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      5
+     ],
+     "third": [
+      7,
+      5,
+      1,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026110687",
+    "day": 3,
+    "race": 4,
+    "axis": 5,
+    "axis_name": "鈴木庸之",
+    "partners": [
+     7,
+     1,
+     4
+    ],
+    "bet": "5→7,1,4 (2車単 軸流し)",
+    "score": 27.13,
+    "tri": {
+     "first": 5,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "宇都宮",
+    "venue_key": "utsunomiya",
+    "cup": "2026110824",
+    "day": 1,
+    "race": 11,
+    "axis": 7,
+    "axis_name": "上川直紀",
+    "partners": [
+     4,
+     3
+    ],
+    "bet": "7→4,3 (2車単 番手狙い)",
+    "score": 18.83,
+    "tri": {
+     "first": 7,
+     "second": [
+      4,
+      3
+     ],
+     "third": [
+      4,
+      3,
+      2,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "熊本",
+    "venue_key": "kumamoto",
+    "cup": "2026110687",
+    "day": 3,
+    "race": 11,
+    "axis": 7,
+    "axis_name": "篠原龍馬",
+    "partners": [
+     3,
+     5
+    ],
+    "bet": "7→3,5 (2車単 番手狙い)",
+    "score": 17.82,
+    "tri": {
+     "first": 7,
+     "second": [
+      3,
+      5
+     ],
+     "third": [
+      3,
+      5,
+      1,
+      2
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
