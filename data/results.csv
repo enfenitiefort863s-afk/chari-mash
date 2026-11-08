@@ -578,3 +578,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261108-honmei-yokkaichi-1,20261108,11:01,honmei,四日市,yokkaichi,1,7,渡邉一成,3-1-5,36.37,1,7,5,4,差,1,300,1110,ok,0,600,0
 20261108-honmei-yahiko-6,20261108,11:01,honmei,弥彦,yahiko,6,3,梅川風子,7-5-1,28.29,1,3,1,7,逃,1,300,260,ok,0,600,0
 20261108-ara-kumamoto-11,20261108,11:01,ara,熊本,kumamoto,11,7,篠原龍馬,3-5,17.82,5,1,3,2,差,0,200,0,ok,0,600,0
+20261108-ara-utsunomiya-11,20261108,11:01,ara,宇都宮,utsunomiya,11,7,上川直紀,4-3,18.83,1,7,6,4,差,0,200,0,ok,0,600,0
