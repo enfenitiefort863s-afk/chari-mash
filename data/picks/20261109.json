@@ -1,0 +1,131 @@
+[
+ {
+  "time": "11:20",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "高知",
+    "venue_key": "kochi",
+    "cup": "2026110774",
+    "day": 3,
+    "race": 7,
+    "axis": 5,
+    "axis_name": "南潤",
+    "partners": [
+     1,
+     4,
+     3
+    ],
+    "bet": "5→1,4,3 (2車単 軸流し)",
+    "score": 31.26,
+    "tri": {
+     "first": 5,
+     "second": [
+      1,
+      4
+     ],
+     "third": [
+      1,
+      4,
+      3,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "弥彦",
+    "venue_key": "yahiko",
+    "cup": "2026110721",
+    "day": 3,
+    "race": 8,
+    "axis": 4,
+    "axis_name": "高橋泰裕",
+    "partners": [
+     6,
+     2,
+     7
+    ],
+    "bet": "4→6,2,7 (2車単 軸流し)",
+    "score": 29.18,
+    "tri": {
+     "first": 4,
+     "second": [
+      6,
+      2
+     ],
+     "third": [
+      6,
+      2,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "松戸",
+    "venue_key": "matsudo",
+    "cup": "2026110931",
+    "day": 1,
+    "race": 9,
+    "axis": 2,
+    "axis_name": "松崎広太",
+    "partners": [
+     7,
+     5,
+     3
+    ],
+    "bet": "2→7,5,3 (2車単 軸流し)",
+    "score": 27.52,
+    "tri": {
+     "first": 2,
+     "second": [
+      7,
+      5
+     ],
+     "third": [
+      7,
+      5,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松戸",
+    "venue_key": "matsudo",
+    "cup": "2026110931",
+    "day": 1,
+    "race": 2,
+    "axis": 3,
+    "axis_name": "井上将志",
+    "partners": [
+     7,
+     1
+    ],
+    "bet": "3→7,1 (2車単 番手狙い)",
+    "score": 13.58,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      4,
+      2
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
