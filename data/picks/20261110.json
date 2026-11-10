@@ -128,5 +128,135 @@
     }
    }
   ]
+ },
+ {
+  "time": "13:29",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "宇都宮",
+    "venue_key": "utsunomiya",
+    "cup": "2026110824",
+    "day": 3,
+    "race": 2,
+    "axis": 7,
+    "axis_name": "大薗宏",
+    "partners": [
+     2,
+     4,
+     1
+    ],
+    "bet": "7→2,4,1 (2車単 軸流し)",
+    "score": 23.62,
+    "tri": {
+     "first": 7,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      1,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026110984",
+    "day": 2,
+    "race": 7,
+    "axis": 3,
+    "axis_name": "原田研太朗",
+    "partners": [
+     5,
+     2,
+     1
+    ],
+    "bet": "3→5,2,1 (2車単 軸流し)",
+    "score": 20.66,
+    "tri": {
+     "first": 3,
+     "second": [
+      5,
+      2
+     ],
+     "third": [
+      5,
+      2,
+      1,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "宇都宮",
+    "venue_key": "utsunomiya",
+    "cup": "2026110824",
+    "day": 3,
+    "race": 1,
+    "axis": 2,
+    "axis_name": "邊見斎",
+    "partners": [
+     7,
+     4,
+     3
+    ],
+    "bet": "2→7,4,3 (2車単 軸流し)",
+    "score": 19.55,
+    "tri": {
+     "first": 2,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      3,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "松戸",
+    "venue_key": "matsudo",
+    "cup": "2026110931",
+    "day": 2,
+    "race": 9,
+    "axis": 4,
+    "axis_name": "櫻井祐太郎",
+    "partners": [
+     1,
+     7,
+     5
+    ],
+    "bet": "4→1,7,5 (2車単 軸流し)",
+    "score": 13.4,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      5,
+      3
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
