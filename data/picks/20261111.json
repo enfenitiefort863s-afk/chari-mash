@@ -1,0 +1,132 @@
+[
+ {
+  "time": "07:56",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "大宮",
+    "venue_key": "omiya",
+    "cup": "2026111025",
+    "day": 2,
+    "race": 4,
+    "axis": 3,
+    "axis_name": "松田祥位",
+    "partners": [
+     4,
+     1,
+     5
+    ],
+    "bet": "3→4,1,5 (2車単 軸流し)",
+    "score": 42.25,
+    "tri": {
+     "first": 3,
+     "second": [
+      4,
+      1
+     ],
+     "third": [
+      4,
+      1,
+      5,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "福井",
+    "venue_key": "fukui",
+    "cup": "2026111151",
+    "day": 1,
+    "race": 4,
+    "axis": 4,
+    "axis_name": "上杉有弘",
+    "partners": [
+     1,
+     7,
+     3
+    ],
+    "bet": "4→1,7,3 (2車単 軸流し)",
+    "score": 32.04,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      7
+     ],
+     "third": [
+      1,
+      7,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "富山",
+    "venue_key": "toyama",
+    "cup": "2026111046",
+    "day": 2,
+    "race": 8,
+    "axis": 3,
+    "axis_name": "末廣快理",
+    "partners": [
+     7,
+     4,
+     5
+    ],
+    "bet": "3→7,4,5 (2車単 軸流し)",
+    "score": 27.23,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      5,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "福井",
+    "venue_key": "fukui",
+    "cup": "2026111151",
+    "day": 1,
+    "race": 9,
+    "axis": 3,
+    "axis_name": "東龍之介",
+    "partners": [
+     7,
+     4,
+     1
+    ],
+    "bet": "3→7,4,1 (2車単 軸流し)",
+    "score": 18.31,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      1,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
