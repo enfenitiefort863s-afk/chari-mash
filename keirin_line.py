@@ -557,7 +557,7 @@ def rider_rating(r, girls=False):
     if fm and fm["n"] >= 5:
         adj += max(-1.5, min(1.5, (5.0 - fm["avg"]) * 0.4))      # 直近の平均着順
         if fm["n"] >= 8:
-            adj += max(-0.7, min(0.7, fm["trend"] * 0.2))          # 上り調子か下り調子か
+            adj += max(-1.4, min(1.4, fm["trend"] * 0.45))         # 上り調子/下り調子を強めに反映(2026-11-10 ユーザー要望)
         adj -= min(1.0, 0.5 * fm["acc"])                           # 落車・失格など
     r["rating"] = r["score"] + adj
     return r["rating"]
@@ -779,6 +779,147 @@ def line_strength(ln, by_car):
     return sum(r["rating"] for r in rs) / len(rs) + (0.3 * jiriki_wins(head) if head else 0)
 
 
+def _tactic(r):
+    """今期の決まり手別勝ち数から、その選手の主戦法を返す (種類, 勝ち数)"""
+    cs = [("逃", to_int(r.get("逃")) or 0), ("捲", to_int(r.get("捲")) or 0),
+          ("差", to_int(r.get("差")) or 0), ("マ", to_int(r.get("マ")) or 0)]
+    cs.sort(key=lambda t: -t[1])
+    return cs[0]
+
+
+def _front_sentence(by_car, lines, main):
+    """先行争いの具体化: 誰が・今期どれだけ逃げて連対しているかで主導権を読む"""
+    line_of = {c: i for i, ln in enumerate(lines) for c in ln}
+    fronts = [(car, r) for car, r in by_car.items() if r.get("脚") == "逃"]
+    fronts.sort(key=lambda t: (-(to_int(t[1].get("逃")) or 0), -(t[1].get("score") or 0)))
+    if not fronts:
+        return "先行型がおらず、誰が風を切るかで隊列が大きく変わる"
+    c0, f0 = fronts[0]
+    ev0 = to_int(f0.get("逃")) or 0
+    if len(fronts) == 1:
+        if c0 == main[0]:
+            if ev0:
+                return (f"先行型は{circ(c0)}{_short_name(f0.get('name', ''))}だけ"
+                        f"(今期逃げ切り{ev0}勝)。すんなり主導権を握る公算大")
+            return (f"先行型は{circ(c0)}{_short_name(f0.get('name', ''))}だけ。"
+                    "逃げ実績は乏しいが、他に先行型がおらず主導権は取りやすい")
+        return (f"先行型は別ラインの{circ(c0)}{_short_name(f0.get('name', ''))}だけ。"
+                "主力ラインはその直後を取る形になりやすい")
+    c1, f1 = fronts[1]
+    ev1 = to_int(f1.get("逃")) or 0
+    if line_of.get(c0) == line_of.get(c1):
+        return (f"先行型2人が同じライン({circ(c0)}・{circ(c1)})におり、"
+                "隊列はそのライン中心に組み上がる")
+    strong = c0 if (f0.get("score") or 0) >= (f1.get("score") or 0) else c1
+    return (f"先行争いは{circ(c0)}{_short_name(f0.get('name', ''))}(今期逃げ{ev0}勝)と"
+            f"{circ(c1)}{_short_name(f1.get('name', ''))}(同{ev1}勝)。"
+            f"競走得点で上回る{circ(strong)}のラインが主導権優勢。"
+            "競り合えばハイペースになり、差し・捲りに展開が向く")
+
+
+def _form_clause(r):
+    """直近成績(選手ページ取得時だけ付く)から、状態を一言で"""
+    f = r.get("form")
+    if not f:
+        return ""
+    if f.get("acc", 0) >= 2:
+        return f"近走に落車・事故が{f['acc']}回あるのは不安材料"
+    if f.get("trend", 0) >= 1.5:
+        return "近走ははっきり上り調子"
+    if f.get("top3", 0) >= 0.6:
+        return f"近走10走の3着内{round(f['top3'] * 100)}%と安定"
+    if f.get("win", 0) >= 0.3:
+        return f"近走10走で{round(f['win'] * 10)}勝と勝ち切れている"
+    if f.get("trend", 0) <= -1.5:
+        return "近走は下降気味"
+    return ""
+
+
+def _axis_sentence(x, kind, main, lines):
+    """軸の勝ち筋を、その選手の決まり手内訳と直近成績で裏付けて書く"""
+    by_car = x["by_car"]
+    axis = x[f"{kind}_axis"]
+    r = by_car.get(axis) or {}
+    nm = _short_name(r.get("name", ""))
+    tac, wins = _tactic(r)
+    fw, jw = follow_wins(r), jiriki_wins(r)
+    ln = next((l for l in lines if axis in l), None)
+    parts = []
+    if ln and main and ln == main:
+        pos = ln.index(axis)
+        if pos == 0:
+            if r.get("脚") == "逃":
+                parts.append(f"◎{circ(axis)}{nm}が先行して押し切る形")
+            else:
+                parts.append(f"◎{circ(axis)}{nm}がライン先頭から押し切る形")
+            if tac == "逃" and wins:
+                parts.append(f"今期の逃げ切り{wins}勝がその裏付け")
+        elif pos == 1:
+            parts.append(f"◎{circ(axis)}{nm}が番手から差す形")
+            if fw >= jw and fw:
+                parts.append(f"今期は差し・マークで{fw}勝の追い込み型")
+            elif jw:
+                parts.append(f"自力も今期{jw}勝あり、番手捲りも視野")
+        else:
+            parts.append(f"◎{circ(axis)}{nm}がライン{pos + 1}番手から差し込む形")
+            if fw:
+                parts.append(f"今期の差し・マーク{fw}勝の脚が武器")
+    elif ln:
+        parts.append(f"◎{circ(axis)}{nm}は別ラインの先頭から自力勝負")
+        if jw:
+            parts.append(f"今期の逃げ・捲りで{jw}勝の実績")
+        else:
+            parts.append("自力の実績は乏しく、位置取りが鍵")
+    else:
+        parts.append(f"◎{circ(axis)}{nm}は単騎で捲り・差し狙い")
+        if tac in ("捲", "差") and wins:
+            parts.append(f"主戦法は{tac}(今期{wins}勝)")
+    fc = _form_clause(r)
+    if fc:
+        parts.append(fc)
+    return "。".join(parts)
+
+
+def _bank_clause(x):
+    """バンク特性(直線の長さ)が展開に効く会場だけ、一言添える"""
+    b = VENUE_BANK.get(x.get("venue_key") or "")
+    if not b:
+        return ""
+    bias = bank_bias(x["venue_key"])
+    _length, straight = b
+    if bias >= 0.35:
+        return f"{x['venue']}は直線{straight}mと長めで、差し・追い込みが届きやすい"
+    if bias <= -0.35:
+        return f"{x['venue']}は直線{straight}mと短めで、先行が残りやすい"
+    return ""
+
+
+def _risk_sentence(x, kind, main, ranked):
+    """展開が崩れる条件を1つだけ挙げる(千切れ・対抗ラインの先行力)"""
+    by_car = x["by_car"]
+    axis = x[f"{kind}_axis"]
+
+    def val(r):
+        return r["rating"] if r.get("rating") is not None else (r.get("score") or 0)
+
+    if main and len(main) >= 2:
+        gap = val(by_car.get(main[0]) or {}) - val(by_car.get(main[1]) or {})
+        if gap >= 10.0:   # 評価は番手にも加点されるため、配信文では大きめの差だけ拾う
+            if axis == main[0]:
+                return (f"番手{circ(main[1])}との力差が大きく、ペースが上がると"
+                        "千切れて単騎戦になるリスク")
+            if axis == main[1]:
+                return f"先頭{circ(main[0])}との力差が大きく、離れず付けられるかが焦点"
+            return "主力ラインは先頭と番手の力差が大きく、ちぎれると隊形が崩れる"
+    if len(ranked) >= 2 and main:
+        rh = by_car.get(ranked[1][0]) or {}
+        mh = by_car.get(main[0]) or {}
+        if (to_int(rh.get("逃")) or 0) >= (to_int(mh.get("逃")) or 0) + 3:
+            return (f"対抗ラインの先頭{circ(ranked[1][0])}の方が逃げ実績で上。"
+                    "主導権を取られると苦しい展開")
+    return ""
+
+
 def flow_lines(lines, by_car, girls, riders, n_front, notes):
     """展開予想を、短い文の並びにする(並び予想が無いレースは、個人の力量で書く)"""
     out = []
@@ -802,10 +943,12 @@ def flow_lines(lines, by_car, girls, riders, n_front, notes):
                 out.append(f"{circ(main[0])}{h.get('name', '')}のライン({seg})が主力")
             if len(ranked) >= 2 and len(ranked[1]) >= 2:
                 out.append("対抗は" + "-".join(map(str, ranked[1])) + "ライン")
-    if n_front >= 3:
-        out.append(f"先行型が{n_front}人で主導権争い、ペースは速め")
-    elif n_front == 0:
-        out.append("先行型が不在で、ペースは落ち着く見込み")
+            out.append(_front_sentence(by_car, lines, main))
+    if not lines:
+        if n_front >= 3:
+            out.append(f"先行型が{n_front}人で主導権争い、ペースは速め")
+        elif n_front == 0:
+            out.append("先行型が不在で、ペースは落ち着く見込み")
     out += notes
     return out
 
@@ -983,6 +1126,12 @@ def analyze(race):
                       else "本命サイドが有利" if honmei >= 8 else "やや本命寄り")
     ara_verdict = ("波乱含み・高配当狙い" if ara >= 16
                    else "荒れる可能性あり" if ara >= 10 else "やや荒れ模様")
+    # 狙い目度: 軸の信頼度(本命度)を土台に、波乱度(配当妙味)を少し足したもの。
+    # 「荒れ」狙いは狙いにくいため、第2枠はこの指標で選ぶ (2026-11-10 ユーザー要望)
+    nerai = honmei * 0.6 + min(ara, 14) * 0.4
+    nerai_verdict = ("軸が信頼できて配当も狙える狙い目" if nerai >= 13
+                     else "堅さと配当のバランスが良い狙い目" if nerai >= 9.5
+                     else "一発に賭ける狙い目")
 
     return {
         "venue": VENUE_JP.get(race["venue"], race["venue"]),
@@ -991,7 +1140,7 @@ def analyze(race):
         "race": race["race"],
         "deadline": deadline_min(race.get("title")),
         "girls": girls, "girls_cmp": [] if lines else girls_compare(riders),
-        "honmei": honmei, "ara": ara,
+        "honmei": honmei, "ara": ara, "nerai": nerai, "nerai_verdict": nerai_verdict,
         "by_car": by_car, "lines": lines,
         "honmei_axis": top, "honmei_partners": partners,
         "honmei_bet": honmei_bet, "honmei_tags": honmei_tags,
@@ -1017,8 +1166,23 @@ def pick(results, only_upcoming=True, n=5):
     honmei = sorted(rows, key=lambda x: -x["honmei"])[:n]
     used = {(x["venue"], x["race"]) for x in honmei}
     rest = [x for x in rows if (x["venue"], x["race"]) not in used]
-    ara = sorted(rest, key=lambda x: -x["ara"])[:n]
+    # 第2枠は「狙い目」: 狙い目度で選び、そのレースの本命サイドの軸・買い目で提示する
+    ara = [nerai_view(x) for x in sorted(rest, key=lambda x: -x["nerai"])[:n]]
     return honmei, ara
+
+
+def nerai_view(x):
+    """狙い目レース用の見せ方に組み替えた分析結果を返す。
+    軸・相手・買い目・展開はそのレースの本命サイドを使い、スコアは狙い目度にする。
+    配信の記録・結果判定もこの内容で統一される (save_picks は ara_* を読むため)。
+    元の荒れ度は ara_raw に残し、学習しきい値の判定にはそちらを使う"""
+    y = dict(x)
+    y["ara_raw"] = x["ara"]
+    y["ara"] = x["nerai"]
+    for key in ("axis", "partners", "bet", "tags", "flow", "tri"):
+        y[f"ara_{key}"] = x[f"honmei_{key}"]
+    y["ara_verdict"] = x["nerai_verdict"]
+    return y
 
 
 def fmt_time(m):
@@ -1098,7 +1262,7 @@ def race_block(x, kind, idx, level=3):
         tags, verdict, score, icon = x["honmei_tags"], x["honmei_verdict"], x["honmei"], "🎯"
     else:
         axis, partners, flow, tri = x["ara_axis"], x["ara_partners"], x["ara_flow"], x["ara_tri"]
-        tags, verdict, score, icon = x["ara_tags"], x["ara_verdict"], x["ara"], "🌪"
+        tags, verdict, score, icon = x["ara_tags"], x["ara_verdict"], x["ara"], "🔥"
     place = f"{x['venue']}" if idx is not None else ""
     n_flow = {3: 4, 2: 3, 1: 2}.get(level, 1)
     reason = "・".join(t for t in tags[:3] if "ガールズ" not in t)
@@ -1127,7 +1291,7 @@ def race_block(x, kind, idx, level=3):
 
 
 def footer():
-    lines = ["🎯=本命サイド　🌪=荒れ狙い", "評価=得点+成績などの補正"]
+    lines = ["🎯=本命サイド　🔥=狙い目", "評価=得点+成績などの補正"]
     if MODEL_RACES:
         lines.append(f"評価は過去{MODEL_RACES}レースの結果で調整済み")
     lines.append("※参考情報です。的中や回収を保証するものではありません。")
@@ -1147,7 +1311,7 @@ def pick_list(picks, show_venue):
     """『おすすめレース』の一覧(締切順)"""
     out = ["🏁おすすめレース"]
     for kind, x in picks:
-        icon = "🎯" if kind == "honmei" else "🌪"
+        icon = "🎯" if kind == "honmei" else "🔥"
         score = x["honmei"] if kind == "honmei" else x["ara"]
         place = x["venue"] if show_venue else ""
         out.append(f"{icon}{place}{x['race']}R　⏰{fmt_time(x['deadline'])}　{stars(score)}")
@@ -1189,7 +1353,7 @@ def forecast_pickup_lines(honmei, ara, limit=3):
         return []
     out = ["", "⭐本日のピックアップ選手"]
     for _, kind, x, axis, r, score in chosen:
-        icon = "🎯本命" if kind == "honmei" else "🌪荒れ"
+        icon = "🎯本命" if kind == "honmei" else "🔥狙い目"
         verdict = x["honmei_verdict"] if kind == "honmei" else x["ara_verdict"]
         kyaku = r.get("脚", "")
         out.append(f"・{x['venue']}{x['race']}R　⏰{fmt_time(x['deadline'])}　{icon}")
@@ -1208,11 +1372,22 @@ def _short_name(name):
 
 
 def smart_flow_lines(x, kind):
-    """展開予想(スマート版): 主力ラインを役割チェーンで見せ、結論を1文に絞る"""
+    """展開予想(スマート版): 役割チェーン + データ裏付けの分析文。
+    先行争いは今期の逃げ実績、軸は決まり手内訳と直近成績、さらにバンク特性と
+    ラインの崩壊リスクまで見て書く(並びからの定型文にしない)"""
     by_car = x["by_car"]
+    axis = x[f"{kind}_axis"]
     lines = [ln for ln in (x.get("lines") or []) if any(c in by_car for c in ln)]
     if not lines:
-        return ["🔮展開：ライン無し。個人の力量と位置取り勝負"]
+        r = by_car.get(axis) or {}
+        tac, wins = _tactic(r)
+        s = f"◎{circ(axis)}{_short_name(r.get('name', ''))}が中心"
+        if wins:
+            s += f"。主戦法は{tac}(今期{wins}勝)"
+        fc = _form_clause(r)
+        if fc:
+            s += f"。{fc}"
+        return ["🔮展開：ライン無し。個人の力量と位置取り勝負", "　" + s]
     multi = [ln for ln in lines if len(ln) >= 2]
     ranked = sorted(multi or lines, key=lambda ln: -line_strength(ln, by_car))
     main = ranked[0]
@@ -1225,35 +1400,25 @@ def smart_flow_lines(x, kind):
             role = "先頭"
         chain.append(f"{circ(car)}{_short_name(r.get('name', ''))}({role})")
     out = ["🔮展開：" + " → ".join(chain)]
-    axis = x[f"{kind}_axis"]
-    head = by_car.get(main[0]) or {}
-    n_front = sum(1 for r in by_car.values() if r.get("脚") == "逃")
-    if n_front >= 3:
-        pace = "先行争いでペースは速め"
-    elif n_front == 0:
-        pace = "先行不在でペースは落ち着く"
-    else:
-        pace = f"主導権は{circ(main[0])}{_short_name(head.get('name', ''))}"
-    if axis == main[0]:
-        win = f"◎{circ(axis)}が先行して押し切る形"
-    elif len(main) >= 2 and axis == main[1]:
-        win = f"◎{circ(axis)}が番手から差す形"
-    elif axis in main:
-        win = f"◎{circ(axis)}がライン後方から差し込む形"
-    elif any(axis == ln[0] for ln in lines):
-        win = f"◎{circ(axis)}が別ラインの先頭から捲る形"
-    else:
-        win = f"◎{circ(axis)}は単騎で捲り・差し狙い"
-    out.append(f"　{pace}。{win}")
-    if len(ranked) >= 2 and len(ranked[1]) >= 2:
-        out.append("　対抗：" + "-".join(circ(c) for c in ranked[1]) + "ライン")
+    body = [_front_sentence(by_car, lines, main),
+            _axis_sentence(x, kind, main, lines)]
+    bank = _bank_clause(x)
+    if bank:
+        body.append(bank)
+    risk = _risk_sentence(x, kind, main, ranked)
+    if risk:
+        body.append(risk)
+    # Embedの文字数に収めるため、長いときは後ろ(リスク→バンク)から落とす
+    while len(body) > 2 and sum(len(t) for t in body) > 330:
+        body.pop()
+    out += ["　" + t for t in body if t]
     return out
 
 
 def smart_race_block(x, kind, level=3):
     """1レースのスマート版ブロック: 見出し→並び→展開→選手(評価順)→買い目→一言"""
     score = x["honmei"] if kind == "honmei" else x["ara"]
-    label = "🎯本命" if kind == "honmei" else "🌪荒れ"
+    label = "🎯本命" if kind == "honmei" else "🔥狙い目"
     out = [f"🏁 {VENUE_JP.get(x['venue'], x['venue'])}{x['race']}R "
            f"⏰{fmt_time(x.get('deadline'))} {label} {stars(score)}"]
     if x.get("lines"):
@@ -1332,7 +1497,7 @@ def _fit_field(v, limit=1024):
 def smart_race_embed(x, kind):
     """1レース分のEmbed(カード)。中身はスマート版テキストと同じ部品から作る"""
     score = x["honmei"] if kind == "honmei" else x["ara"]
-    label = "🎯本命" if kind == "honmei" else "🌪荒れ"
+    label = "🎯本命" if kind == "honmei" else "🔥狙い目"
     fields = []
     if x.get("lines"):
         fields.append({"name": "並び", "inline": False, "value": _fit_field(" ｜ ".join(
@@ -1597,6 +1762,29 @@ def send_forecast(honmei, ara, full_text, url):
             else:
                 text = full_text if line_len(full_text) <= LINE_LIMIT \
                     else build_short_message(honmei, ara, url)
+                _send_line_only([text])
+        except Exception as e:
+            print(f"{c} への送信に失敗しました: {e}")
+            errors.append(e)
+    if len(errors) == len(channels):                     # すべて失敗したときだけ、呼び出し側にエラーを返す
+        raise errors[0]
+
+
+def send_report(new_rows, text):
+    """結果報告の送信。Discord宛てはEmbed(カード形式)、LINE宛ては従来のテキスト。
+    片方が失敗してももう片方は送り、すべて失敗したときだけエラーにする"""
+    channels = notify_channels()
+    if not channels:
+        print("送り先が設定されていないため、送信せず表示のみ")
+        print(text)
+        return
+    errors = []
+    for c in channels:
+        try:
+            if c == "discord":
+                from keirin_track import build_report_embeds
+                _send_discord_embeds(build_report_embeds(new_rows))
+            else:
                 _send_line_only([text])
         except Exception as e:
             print(f"{c} への送信に失敗しました: {e}")
