@@ -20,7 +20,7 @@ FIELDS = ["pick_id", "date", "slot", "kind", "venue", "venue_key", "race",
           "axis", "axis_name", "partners", "score", "axis_finish", "first", "second", "third",
           "kimarite", "hit", "cost", "payout", "status",
           "t3_hit", "t3_cost", "t3_payout"]
-KIND_LABEL = {"honmei": "🎯本命", "ara": "🌪荒れ"}
+KIND_LABEL = {"honmei": "🎯本命", "ara": "🔥狙い目"}
 
 
 # ---------------- 配信した買い目の保存 ----------------
@@ -418,6 +418,75 @@ def report_date_str(now, slot=None):
     if now.hour < 10:
         return (now - timedelta(days=1)).strftime("%Y%m%d")
     return now.strftime("%Y%m%d")
+
+
+REPORT_COLOR_MAIN = 0x3498DB
+REPORT_COLOR_HIT = 0x2ECC71
+
+
+def _fit(v, limit=1024):
+    return v if len(v) <= limit else v[:limit - 1] + "…"
+
+
+def build_report_embeds(new_rows):
+    """結果報告のEmbed(カード)版。集計はテキスト版 build_report と同じものを使う"""
+    now = datetime.now(JST)
+    all_rows = read_rows()
+    target_date = report_date_str(now)
+    day_rows = [r for r in all_rows if r.get("date") == target_date]
+    src = day_rows or new_rows
+
+    fields = []
+    day_stats = []
+    for kind, label in KIND_LABEL.items():
+        s = stats([r for r in src if r["kind"] == kind])
+        if s:
+            day_stats.append(fmt_stats(label, s))
+    fields.append({"name": "【本日の結果】" if day_rows else "【今回の結果】",
+                   "inline": False, "value": _fit("\n".join(day_stats) or "記録なし")})
+    hits = [r for r in src if str(r["hit"]) == "1"]
+    if hits:
+        fields.append({"name": "✅的中", "inline": False, "value": _fit(" / ".join(
+            f"{r['venue']}{r['race']}R {int(r['payout']):,}円" for r in hits))})
+    pu = pickup_riders(src)
+    if pu:
+        fields.append({"name": "🏆本日の好走ピックアップ", "inline": False,
+                       "value": _fit("\n".join("・" + t for t in pu))})
+    embeds = [{"title": f"📊 結果報告 {now.month}/{now.day} {now.hour}:{now.minute:02d}",
+               "color": REPORT_COLOR_HIT if hits else REPORT_COLOR_MAIN,
+               "fields": fields}]
+
+    fields2 = []
+    total = []
+    for kind, label in KIND_LABEL.items():
+        s = stats([r for r in all_rows if r["kind"] == kind])
+        if s:
+            total.append(fmt_stats(label, s))
+    if total:
+        fields2.append({"name": "【累計】", "inline": False,
+                        "value": _fit("\n".join(total))})
+    by_v = {}
+    for r in all_rows:
+        by_v.setdefault(r["venue"], []).append(r)
+    vlines = []
+    for v, rs in by_v.items():
+        s = stats(rs)
+        if s and s["n"] >= 6:
+            roi = s["pay"] * 100 / s["cost"] if s["cost"] else 0
+            vlines.append((s["hit"] / s["n"],
+                           f"　{v} {s['n']}件 的中{s['hit'] * 100 / s['n']:.0f}% 回収{roi:.0f}%"))
+    if vlines:
+        fields2.append({"name": "【会場別(6件以上)】", "inline": False, "value": _fit(
+            "\n".join(t for _, t in sorted(vlines, reverse=True)[:8]))})
+    from keirin_line import page_url
+    url = page_url()
+    if url:
+        fields2.append({"name": "🔗これまでの配信・結果はこちら", "inline": False, "value": url})
+    if fields2:
+        embeds.append({"title": "📈 累計成績", "color": REPORT_COLOR_MAIN,
+                       "fields": fields2,
+                       "footer": {"text": "※2車単・3連単とも各100円で計算。参考情報です。"}})
+    return embeds
 
 
 def build_alert(hits):
