@@ -90,8 +90,13 @@ def apply_min_score(honmei, ara):
         return k.MIN_SCORE.get(kind)
 
     def filter_by(xs, kind):
+        # 狙い目(ara枠)は、学習しきい値の判定だけ元の荒れ度(ara_raw)で見る。
+        # 星の数は、表示と同じ狙い目度(x["ara"]には狙い目度が入っている)で見る
+        def thr_val(x):
+            return x.get("ara_raw", x[kind]) if kind == "ara" else x[kind]
+
         kept = [x for x in xs
-                if threshold_for(x, kind) is None or x[kind] >= threshold_for(x, kind)]
+                if threshold_for(x, kind) is None or thr_val(x) >= threshold_for(x, kind)]
         kept2 = [x for x in kept if k.stars(x[kind]).count("★") >= MIN_STARS]
         return kept2 or kept or xs[:1]
 
