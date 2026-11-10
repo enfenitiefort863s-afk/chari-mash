@@ -1,4 +1,4 @@
-#週次の詳しい分析レポート。溜まった結果記録(data/results.csv)を細かく集計して送る。
+# 週次の詳しい分析レポート。溜まった結果記録(data/results.csv)を細かく集計して送る。
 # 切り口: 券種別(2車単/3連単)・星別・会場別・決まり手別・軸の着順・先週との比較。
 # 件数が少ない切り口は「参考」と明記して、数字のブレを鵜呑みにしないようにする。
 # 実行: 日曜 21:00 JST のワークフロー(keirin-weekly.yml)から。手動実行も可。
@@ -145,7 +145,7 @@ def build_weekly_report(rows, now=None):
     out.append("")
 
     out.append("【累計】")
-    for kind, label in (("honmei", "🎯本命"), ("ara", "🌪荒れ")):
+    for kind, label in (("honmei", "🎯本命"), ("ara", "🔥狙い目")):
         ln = _line(label, stats([r for r in rows if r["kind"] == kind]), note_ref=False)
         if ln:
             out.append(ln)
