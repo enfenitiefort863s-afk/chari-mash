@@ -590,3 +590,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261110-honmei-utsunomiya-1,20261110,13:29,honmei,宇都宮,utsunomiya,1,2,邊見斎,7-4-3,19.55,6,1,6,4,差,0,300,0,ok,0,600,0
 20261110-ara-matsudo-9,20261110,13:29,ara,松戸,matsudo,9,4,櫻井祐太郎,1-7-5,13.4,1,4,3,5,逃,0,300,0,ok,0,600,0
 20261110-honmei-nara-1,20261110,13:04,honmei,奈良,nara,1,1,小泉俊也,2-5-3,32.93,3,3,6,1,逃,0,300,0,ok,0,600,0
+20261110-honmei-nara-2,20261110,19:56,honmei,奈良,nara,2,1,村上貴彦,2-4-5,22.16,1,1,4,2,捲,1,300,580,ok,1,600,3470
