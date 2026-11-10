@@ -1,17 +1,17 @@
 {
- "n_races": 1172,
+ "n_races": 1180,
  "men": {
-  "t3": 2.55,
-  "jiriki": 2.45,
-  "mark": 1.55,
-  "pos_follow": 2.71,
+  "t3": 2.62,
+  "jiriki": 2.47,
+  "mark": 1.54,
+  "pos_follow": 2.7,
   "pos_local": 1.08,
   "jump": 1.5,
-  "pos_drop": 1.59
+  "pos_drop": 1.6
  },
  "girls": {
   "t3": 4.0,
-  "jiriki": 2.77,
+  "jiriki": 2.79,
   "mark": 1.58,
   "pos_follow": 2.5,
   "pos_local": 1.0,
