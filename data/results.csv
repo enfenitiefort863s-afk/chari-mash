@@ -599,3 +599,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261111-ara-fukui-9,20261111,07:56,ara,福井,fukui,9,3,東龍之介,7-4-1,18.31,2,4,3,1,差,0,300,0,ok,0,600,0
 20261111-honmei-sasebo-1,20261111,19:56,honmei,佐世保,sasebo,1,1,戸田康平,2-6-4,32.04,2,4,1,7,差,0,300,0,ok,0,600,0
 20261111-ara-sasebo-3,20261111,19:56,ara,佐世保,sasebo,3,1,木曽田晃大,2-3-6,13.8,1,1,2,4,逃,1,300,160,ok,0,600,0
+20261111-honmei-sasebo-4,20261111,19:56,honmei,佐世保,sasebo,4,1,高佐龍太郎,7-2-6,29.21,1,1,7,4,捲,1,300,190,ok,0,600,0
