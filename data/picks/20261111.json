@@ -128,5 +128,135 @@
     }
    }
   ]
+ },
+ {
+  "time": "19:56",
+  "session": "midnight",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "佐世保",
+    "venue_key": "sasebo",
+    "cup": "2026111185",
+    "day": 1,
+    "race": 1,
+    "axis": 1,
+    "axis_name": "戸田康平",
+    "partners": [
+     2,
+     6,
+     4
+    ],
+    "bet": "1→2,6,4 (2車単 軸流し)",
+    "score": 32.04,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      6
+     ],
+     "third": [
+      2,
+      6,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "松阪",
+    "venue_key": "matsusaka",
+    "cup": "2026111147",
+    "day": 1,
+    "race": 8,
+    "axis": 1,
+    "axis_name": "松田安綱",
+    "partners": [
+     2,
+     6,
+     3
+    ],
+    "bet": "1→2,6,3 (2車単 軸流し)",
+    "score": 30.17,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      6
+     ],
+     "third": [
+      2,
+      6,
+      3,
+      4
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "佐世保",
+    "venue_key": "sasebo",
+    "cup": "2026111185",
+    "day": 1,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "高佐龍太郎",
+    "partners": [
+     7,
+     2,
+     6
+    ],
+    "bet": "1→7,2,6 (2車単 軸流し)",
+    "score": 29.21,
+    "tri": {
+     "first": 1,
+     "second": [
+      7,
+      2
+     ],
+     "third": [
+      7,
+      2,
+      6,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "佐世保",
+    "venue_key": "sasebo",
+    "cup": "2026111185",
+    "day": 1,
+    "race": 3,
+    "axis": 1,
+    "axis_name": "木曽田晃大",
+    "partners": [
+     2,
+     3,
+     6
+    ],
+    "bet": "1→2,3,6 (2車単 軸流し)",
+    "score": 13.8,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      6,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
  }
 ]
