@@ -1,0 +1,132 @@
+[
+ {
+  "time": "07:56",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "玉野",
+    "venue_key": "tamano",
+    "cup": "2026111261",
+    "day": 1,
+    "race": 5,
+    "axis": 4,
+    "axis_name": "兒島直樹",
+    "partners": [
+     2,
+     7,
+     5
+    ],
+    "bet": "4→2,7,5 (2車単 軸流し)",
+    "score": 48.49,
+    "tri": {
+     "first": 4,
+     "second": [
+      2,
+      7
+     ],
+     "third": [
+      2,
+      7,
+      5,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "福井",
+    "venue_key": "fukui",
+    "cup": "2026111151",
+    "day": 2,
+    "race": 2,
+    "axis": 4,
+    "axis_name": "荻原寿嗣",
+    "partners": [
+     2,
+     6,
+     7
+    ],
+    "bet": "4→2,6,7 (2車単 軸流し)",
+    "score": 45.48,
+    "tri": {
+     "first": 4,
+     "second": [
+      2,
+      6
+     ],
+     "third": [
+      2,
+      6,
+      7,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "富山",
+    "venue_key": "toyama",
+    "cup": "2026111046",
+    "day": 3,
+    "race": 5,
+    "axis": 4,
+    "axis_name": "川崎健次",
+    "partners": [
+     6,
+     2,
+     1
+    ],
+    "bet": "4→6,2,1 (2車単 軸流し)",
+    "score": 26.17,
+    "tri": {
+     "first": 4,
+     "second": [
+      6,
+      2
+     ],
+     "third": [
+      6,
+      2,
+      1,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "立川",
+    "venue_key": "tachikawa",
+    "cup": "2026111228",
+    "day": 1,
+    "race": 6,
+    "axis": 3,
+    "axis_name": "山本伸一",
+    "partners": [
+     7,
+     1,
+     5
+    ],
+    "bet": "3→7,1,5 (2車単 軸流し)",
+    "score": 18.28,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      5,
+      2
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
