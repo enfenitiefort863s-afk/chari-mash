@@ -608,3 +608,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261112-honmei-matsusaka-2,20261112,19:56,honmei,松阪,matsusaka,2,1,尾方真生,2-3-4,24.0,1,1,5,6,捲,0,300,0,ok,0,600,0
 20261112-ara-sasebo-4,20261112,19:56,ara,佐世保,sasebo,4,1,高佐龍太郎,3-6-2,14.21,1,1,7,4,逃,0,300,0,ok,0,600,0
 20261112-honmei-matsusaka-4,20261112,19:56,honmei,松阪,matsusaka,4,1,鈴木小次廊,2-6-3,24.0,1,1,6,5,捲,1,300,2740,ok,1,600,49850
+20261112-honmei-sasebo-6,20261112,19:56,honmei,佐世保,sasebo,6,1,山田晃久,7-2-3,29.08,3,4,6,1,差,0,300,0,ok,0,600,0
