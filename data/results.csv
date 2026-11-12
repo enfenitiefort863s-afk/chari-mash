@@ -602,3 +602,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261111-honmei-sasebo-4,20261111,19:56,honmei,佐世保,sasebo,4,1,高佐龍太郎,7-2-6,29.21,1,1,7,4,捲,1,300,190,ok,0,600,0
 20261111-honmei-matsusaka-8,20261111,19:56,honmei,松阪,matsusaka,8,1,松田安綱,2-6-3,30.17,1,1,4,2,捲,0,300,0,ok,0,600,0
 20261112-honmei-fukui-2,20261112,07:56,honmei,福井,fukui,2,4,荻原寿嗣,2-6-7,45.48,1,4,2,1,捲,1,300,170,ok,0,600,0
+20261112-honmei-toyama-5,20261112,07:56,honmei,富山,toyama,5,4,川崎健次,6-2-1,26.17,1,4,3,6,差,0,300,0,ok,0,600,0
