@@ -611,3 +611,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261112-honmei-sasebo-6,20261112,19:56,honmei,佐世保,sasebo,6,1,山田晃久,7-2-3,29.08,3,4,6,1,差,0,300,0,ok,0,600,0
 20261113-ara-matsudo-3,20261113,07:56,ara,松戸,matsudo,3,5,田口裕一,7-1-6,13.74,1,5,3,4,差,0,300,0,ok,0,600,0
 20261113-honmei-tamano-1,20261113,07:56,honmei,玉野,tamano,1,1,榊枝天旺,7-4-5,42.86,1,1,5,4,逃,1,300,3170,ok,0,600,0
+20261113-honmei-tamano-5,20261113,07:56,honmei,玉野,tamano,5,7,兒島直樹,3-2-5,24.75,1,7,1,5,捲,0,300,0,ok,0,600,0
