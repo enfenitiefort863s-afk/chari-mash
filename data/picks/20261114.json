@@ -1,0 +1,132 @@
+[
+ {
+  "time": "07:56",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026111484",
+    "day": 1,
+    "race": 7,
+    "axis": 7,
+    "axis_name": "柳沼鼓太朗",
+    "partners": [
+     3,
+     1,
+     4
+    ],
+    "bet": "7→3,1,4 (2車単 軸流し)",
+    "score": 30.86,
+    "tri": {
+     "first": 7,
+     "second": [
+      3,
+      1
+     ],
+     "third": [
+      3,
+      1,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "松戸",
+    "venue_key": "matsudo",
+    "cup": "2026111331",
+    "day": 2,
+    "race": 5,
+    "axis": 3,
+    "axis_name": "内山雅貴",
+    "partners": [
+     7,
+     4,
+     5
+    ],
+    "bet": "3→7,4,5 (2車単 軸流し)",
+    "score": 28.49,
+    "tri": {
+     "first": 3,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      5,
+      1
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "honmei",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026111484",
+    "day": 1,
+    "race": 3,
+    "axis": 4,
+    "axis_name": "山本真",
+    "partners": [
+     5,
+     3,
+     7
+    ],
+    "bet": "4→5,3,7 (2車単 軸流し)",
+    "score": 27.34,
+    "tri": {
+     "first": 4,
+     "second": [
+      5,
+      3
+     ],
+     "third": [
+      5,
+      3,
+      7,
+      2
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "武雄",
+    "venue_key": "takeo",
+    "cup": "2026111484",
+    "day": 1,
+    "race": 6,
+    "axis": 2,
+    "axis_name": "横溝貫太",
+    "partners": [
+     7,
+     4,
+     1
+    ],
+    "bet": "2→7,4,1 (2車単 軸流し)",
+    "score": 18.17,
+    "tri": {
+     "first": 2,
+     "second": [
+      7,
+      4
+     ],
+     "third": [
+      7,
+      4,
+      1,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
