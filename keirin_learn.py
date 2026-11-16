@@ -10,8 +10,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import keirin_web as kw
-from keirin_line import BASE, LEARN_KEYS, PRIOR_WEIGHTS, VENUE_JP, WORKERS, fetch
-from keirin_track import DATA_DIR, LEARN_DIR, parse_result, read_rows
+from keirin_line import LEARN_KEYS, PRIOR_WEIGHTS, VENUE_JP, WORKERS
+from keirin_track import DATA_DIR, LEARN_DIR, fetch_results_page, read_rows
 
 MODEL_PATH = os.environ.get("MODEL_PATH") or os.path.join(DATA_DIR, "model.json")
 MIN_RACES = 150          # これ未満なら、まだ重みを更新しない
@@ -33,26 +33,36 @@ def load_learn_rows(days=LOOKBACK_DAYS):
                 if row["k"] in seen:
                     continue
                 seen.add(row["k"])
+                row.setdefault("_file_date", fn[:-len(".jsonl")])   # 旧形式の行の結果取得用(開催日=保存日)
                 out.append(row)
     return out
 
 
 def fetch_result(row):
-    """レースキー(venue-cup-day-race)から結果ページを取り、(着順dict{車番:着順}, 決まり手の文字) を返す"""
+    """学習行の結果を chariloto の結果ページ(会場・日付単位)から引いて、(着順dict{車番:着順}, 決まり手) を返す。
+    日付は、新形式の行は row['d'](開催日)、旧形式(WinTicket時代)の行は学習ファイル名の日付を使う。
+    キーの cup/day は新ソースでは使わない(venue と race だけを使う)ため、旧キーのままで読み替えできる。
+    会場・日付が特定できない行は、理由をログに出してスキップする(全体は落とさない)"""
+    parts = (row.get("k") or "").split("-")
+    if len(parts) < 4:
+        print(f"学習: キーを解釈できないため結果を取得できません k={row.get('k')}")
+        return None, ""
+    venue, race = parts[0], None
     try:
-        venue, cup, day, race = row["k"].split("-", 3)
+        race = int(parts[-1])
     except ValueError:
+        pass
+    date_ymd = str(row.get("d") or row.get("_file_date") or "")
+    if race is None or len(date_ymd) != 8:
+        print(f"学習: 結果の取得先を特定できないためスキップします k={row.get('k')} date={date_ymd}")
         return None, ""
-    url = f"{BASE}/keirin/{venue}/raceresult/{cup}/{day}/{race}"
-    html = fetch(url, retries=0)
-    time.sleep(0.2)
-    if not html:
+    page = fetch_results_page(venue, date_ymd)   # (会場,日付)単位でキャッシュされる
+    if not page:
         return None, ""
-    res = parse_result(html)
+    res = page.get(race)
     if not res:
         return None, ""
     return res["orders"], res.get("kimarite", "")
-
 
 POS_WEIGHTS = {1: 1.0, 2: 0.6, 3: 0.3}   # 学習シグナル: 着順ごとの重み(1着だけでなく2・3着も使う)
 
