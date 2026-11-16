@@ -3,14 +3,14 @@ import csv
 import json
 import os
 import re
+import threading
 import time
 from datetime import datetime, timezone, timedelta
 
-from concurrent.futures import ThreadPoolExecutor
 
 from bs4 import BeautifulSoup
 
-from keirin_line import BASE, WORKERS, clean, fetch, to_int
+from keirin_line import BASE, VENUE_JOCD, clean, fetch, to_int
 
 JST = timezone(timedelta(hours=9))
 DATA_DIR = os.environ.get("DATA_DIR", "data")
@@ -39,14 +39,15 @@ def session_already_sent(session):
 
 def save_picks(honmei, ara, results, session=""):
     """配信した本命・荒れの買い目を data/picks/YYYYMMDD.json に追記する"""
-    url_of = {(rc["venue"], rc["race"]): rc.get("url", "") for rc in results}
+    info_of = {(rc["venue"], rc["race"]): rc for rc in results}
     now = datetime.now(JST)
     picks = []
     for kind, xs in (("honmei", honmei), ("ara", ara)):
         for x in xs:
-            m = re.search(r"/racecard/(\d+)/(\d+)/",
-                          url_of.get((x["venue_key"], x["race"]), ""))
-            if not m:
+            rc = info_of.get((x["venue_key"], x["race"]))
+            if not rc or rc.get("cup") is None:
+                # 結果取得に必要な識別子(開催ID)が無い買い目は、理由を出して保存しない
+                print(f"買い目を保存できません(開催ID不明): {x['venue_key']} {x['race']}R kind={kind}")
                 continue
             if kind == "honmei":
                 axis, partners, bet = x["honmei_axis"], x["honmei_partners"], x["honmei_bet"]
@@ -54,7 +55,7 @@ def save_picks(honmei, ara, results, session=""):
                 axis, partners, bet = x["ara_axis"], x["ara_partners"], x["ara_bet"]
             picks.append({
                 "kind": kind, "venue": x["venue"], "venue_key": x["venue_key"],
-                "cup": m.group(1), "day": int(m.group(2)), "race": x["race"],
+                "cup": str(rc["cup"]), "day": rc.get("day"), "race": x["race"],
                 "axis": axis, "axis_name": (x["by_car"].get(axis) or {}).get("name", ""),
                 "partners": list(partners), "bet": bet,
                 "score": round(x.get(kind, 0.0), 2),   # 本命度/荒れ度のスコア(あとで学習に使う)
@@ -75,7 +76,6 @@ def save_picks(honmei, ara, results, session=""):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=1)
     print(f"買い目を保存しました: {path} ({len(picks)}件)")
-
 
 def load_picks(days=3):
     """直近days日ぶんの買い目を読む。同じ日・同じレース・同じ種類は最初の1件だけ"""
@@ -133,44 +133,101 @@ def save_learn_rows(results):
 
 
 # ---------------- 結果ページの読み取り ----------------
-def parse_result(html):
-    """結果ページから、着順・決まり手・払戻金を取る。まだ終わっていなければNone"""
+_PAY_KIND = {("2枠連", "複"): "2枠複", ("2枠連", "単"): "2枠単",
+             ("2車連", "複"): "2車複", ("2車連", "単"): "2車単",
+             ("3連勝", "複"): "3連複", ("3連勝", "単"): "3連単"}
+_RACE_LINK_PAT = re.compile(r"/keirin/athletes/\d{4}-\d{2}-\d{2}/\d+/(\d+)")
+
+
+def _race_no_before(table):
+    """結果表の直前にある出走表リンク(/keirin/athletes/.../{race})からレース番号を引く"""
+    for a in table.find_all_previous("a", href=True):
+        m = _RACE_LINK_PAT.search(a["href"] or "")
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def parse_results_page(html):
+    """chariloto の結果ページ(会場・日付単位)から、全レース分の結果を {レース番号: 結果} で返す。
+    結果 = {"orders": {車番: 着順 or None}, "kimarite": 決まり手, "payouts": {賭式: [(組合せ, 金額)]}}
+    払戻の賭式名は従来形式(2車単/3連単など)に正規化する。
+    まだ確定していないレース(着順が3人分そろわない)は含めない"""
     soup = BeautifulSoup(html, "html.parser")
-    orders, kim, payouts = {}, "", {}
+    out = {}
+    cur_race, cur, n_fin = None, None, 0
+
+    def flush():
+        if cur is not None and cur_race is not None:
+            if sum(1 for o in cur["orders"].values() if o) >= 3:
+                out[cur_race] = cur
+
     for t in soup.find_all("table"):
         rows = t.find_all("tr")
         if not rows:
             continue
         head = [clean(c.get_text()) for c in rows[0].find_all(["th", "td"])]
-        if "選手名" in head and "着" in head:
-            i_kim = head.index("決") if "決" in head else None
+        if "着" in head and "車番" in head and "選手名" in head:
+            flush()
+            n_fin += 1
+            cur_race = _race_no_before(t) or n_fin
+            cur = {"orders": {}, "kimarite": "", "payouts": {}}
+            i_ord, i_car = head.index("着"), head.index("車番")
+            i_kim = head.index("決まり手") if "決まり手" in head else None
             for tr in rows[1:]:
                 cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
-                if len(cells) < 3:
+                if len(cells) <= max(i_ord, i_car):
                     continue
-                car, order = to_int(cells[1]), to_int(cells[0])
+                car = to_int(cells[i_car])
                 if car is None:
                     continue
-                orders[car] = order            # 落車・失格などはNone
+                order = to_int(cells[i_ord])   # 落車・失格などは数値でないため None
+                cur["orders"][car] = order
                 if order == 1 and i_kim is not None and i_kim < len(cells):
-                    kim = cells[i_kim]
-        elif "賭け式" in head and "払戻金" in head:
-            cur = None
+                    cur["kimarite"] = cells[i_kim]
+        elif cur is not None and head and head[0] in ("2枠連", "2車連", "3連勝", "ワイド"):
             for tr in rows[1:]:
                 cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
-                if len(cells) >= 4:
-                    cur = cells[0] or cur
-                    combo, amt = cells[1], cells[2]
-                elif len(cells) == 3:          # ワイドなど(先頭セルが結合されている行)
-                    combo, amt = cells[0], cells[1]
-                else:
-                    continue
-                payouts.setdefault(cur, []).append(
-                    (clean(combo), to_int(re.sub(r"[^\d]", "", amt))))
-    if sum(1 for o in orders.values() if o) < 3:
-        return None
-    return {"orders": orders, "kimarite": kim, "payouts": payouts}
+                if head[0] == "ワイド":
+                    for combo, amt in re.findall(r"(\d+(?:=\d+)+)\s+([\d,]+)円", " ".join(cells)):
+                        cur["payouts"].setdefault("ワイド", []).append(
+                            (clean(combo), to_int(amt.replace(",", ""))))
+                elif len(cells) >= 2:
+                    kind = _PAY_KIND.get((head[0], cells[0]))
+                    m = re.match(r"([\d=\-]+)\s+([\d,]+)円", cells[1])
+                    if kind and m:
+                        cur["payouts"].setdefault(kind, []).append(
+                            (clean(m.group(1)), to_int(m.group(2).replace(",", ""))))
+    flush()
+    return out
 
+
+_RESULTS_PAGE_CACHE = {}
+_RESULTS_PAGE_LOCK = threading.Lock()
+
+
+def fetch_results_page(venue_key, date_ymd):
+    """(会場スラッグ, 日付YYYYMMDD) の結果を {レース番号: 結果} で返す。取得は1回だけ行いキャッシュする。
+    会場コードが引けない・ページが取れない場合は、理由をログに出して None を返す"""
+    key = (venue_key, str(date_ymd))
+    with _RESULTS_PAGE_LOCK:
+        if key in _RESULTS_PAGE_CACHE:
+            return _RESULTS_PAGE_CACHE[key]
+    jocd = VENUE_JOCD.get(venue_key)
+    res = None
+    if not jocd:
+        print(f"結果を取得できません(会場コード不明): venue_key={venue_key} date={date_ymd}")
+    else:
+        d = str(date_ymd)
+        date_s = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+        html = fetch(f"{BASE}/keirin/results/{jocd}/{date_s}", retries=0)
+        if html:
+            res = parse_results_page(html)
+        else:
+            print(f"結果ページを取得できませんでした: venue_key={venue_key} date={date_s}")
+    with _RESULTS_PAGE_LOCK:
+        _RESULTS_PAGE_CACHE[key] = res
+    return res
 
 def evaluate(pick, res):
     """買い目(2車単: 軸→相手)が当たったか、払戻はいくらかを判定して1行にする"""
@@ -295,25 +352,28 @@ def append_rows(rows):
 
 
 def process_pending():
-    """結果が出ているレースを判定してcsvに追記。まだのレースは次回に持ち越し"""
+    """結果が出ているレースを判定してcsvに追記。まだのレースは次回に持ち越し。
+    結果は chariloto の会場・日付単位ページから取るため、(会場, 日付)ごとに1回だけ取得する。
+    買い目の保存形式(cup/day)には依存しないので、WinTicket時代の買い目もそのまま判定できる"""
     done = {r["pick_id"] for r in read_rows()}
     limit = (datetime.now(JST) - timedelta(days=2)).strftime("%Y%m%d")
     pend = [p for p in load_picks(days=3) if p["pick_id"] not in done]
 
-    def get(p):
-        url = f"{BASE}/keirin/{p['venue_key']}/raceresult/{p['cup']}/{p['day']}/{p['race']}"
-        html = fetch(url, retries=0)
-        time.sleep(0.3)
-        return parse_result(html) if html else None
-
-    with ThreadPoolExecutor(max_workers=WORKERS) as ex:      # 結果ページを並行して取得
-        parsed = list(ex.map(get, pend))
+    pages = {}
+    for p in pend:
+        key = (p["venue_key"], p["date"])
+        if key not in pages:
+            pages[key] = fetch_results_page(*key)
+            time.sleep(0.3)
 
     new_rows = []
-    for p, res in zip(pend, parsed):
+    for p in pend:
+        res = (pages.get((p["venue_key"], p["date"])) or {}).get(p["race"])
         if res:
             new_rows.append(evaluate(p, res))
         elif p["date"] < limit:                # 2日たっても結果が取れない(中止など)
+            print(f"結果を取得できないまま2日経過したため未確定で記録します: {p['pick_id']}"
+                  f" (venue_key={p['venue_key']}, date={p['date']}, race={p['race']})")
             new_rows.append({
                 "pick_id": p["pick_id"], "date": p["date"], "slot": p["slot"],
                 "kind": p["kind"], "venue": p["venue"], "venue_key": p["venue_key"],
@@ -327,7 +387,6 @@ def process_pending():
     if new_rows:
         append_rows(new_rows)
     return new_rows
-
 
 # ---------------- 集計とLINEの報告文 ----------------
 def stats(rows):
