@@ -11,7 +11,8 @@ from datetime import datetime, timezone, timedelta
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
-BASE = "https://www.winticket.jp"
+BASE = "https://www.chariloto.com"   # データ取得元(2026-11-15 WinTicket のアクセス制限(403)に伴い chariloto へ移行)
+KEIRIN_JP_TOP = "https://www.keirin.jp/pc/top"   # 開催列挙用(公式サイト。GET のみで取得できる)
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 WORKERS = int(os.environ.get("WORKERS") or 4)       # 同時に取得するページ数(1にすると1ページずつ)
 FETCH_DELAY = 0.3                                   # 1つの取得ごとの待ち時間(秒)
@@ -34,7 +35,8 @@ def _session():
 
 
 def fetch(url, retries=2):
-    """HTMLを取得。失敗したら少し待って再試行"""
+    """HTMLを取得。失敗したら接続を作り直して再試行する
+    (死んだ keep-alive 接続を掴んだまま同じセッションでリトライしても、同じ失敗を繰り返すため)"""
     for i in range(retries + 1):
         try:
             r = _session().get(url, timeout=20)
@@ -43,6 +45,7 @@ def fetch(url, retries=2):
             print(f"  status {r.status_code}: {url}")
         except Exception as e:
             print(f"  error {e}: {url}")
+        _tls.s = None   # 次の試行は新しいセッション(新しい接続)で
         time.sleep(2)
     return None
 
@@ -86,102 +89,229 @@ def to_int(s):
         return None
 
 
+def _venues_today(date_s):
+    """本日(date_s = 'YYYY-MM-DD')開催がある会場コード(jocd)の一覧。
+    主: 公式 keirin.jp トップの埋め込みJSON(pc0101_json の RaceList。GETのみで取れる)
+    予備: chariloto のどこか1会場の一覧ページ(当日の全会場へのリンクを含む)"""
+    ymd = date_s.replace("-", "")
+    html = fetch(KEIRIN_JP_TOP, retries=1)
+    if html:
+        m = re.search(r"pc0101_json\s*=\s*", html)
+        if m:
+            try:
+                obj, _ = json.JSONDecoder().raw_decode(html[m.end():])
+                codes = []
+                for r in obj.get("RaceList") or []:
+                    cd = str(r.get("naibuKeirinCd") or "")
+                    if str(r.get("kaisaiDate")) == ymd and cd and cd not in codes:
+                        codes.append(cd)
+                if codes:
+                    return codes
+            except Exception as e:
+                print("keirin.jp 開催一覧の解析に失敗:", e)
+    for seed in ("28", "34", "42", "31", "86"):
+        html = fetch(f"{BASE}/keirin/athletes/{date_s}/{seed}", retries=0)
+        if not html:
+            continue
+        codes = sorted(set(re.findall(
+            rf"/keirin/athletes/{re.escape(date_s)}/(\d+)(?:[\"/?])", html)))
+        if codes:
+            return codes
+    return []
+
+
 def get_today_races():
-    """出走表トップから、今日の全レースURLを集める"""
-    html = fetch(f"{BASE}/keirin/racecard")
-    if not html:
-        return []
-    soup = BeautifulSoup(html, "html.parser")
-    pat = re.compile(r"^/keirin/([a-z]+)/racecard/(\d+)/(\d+)/(\d+)$")
-    seen, races = set(), []
-    for a in soup.find_all("a", href=True):
-        m = pat.match(a["href"])
-        if m and a["href"] not in seen:
-            seen.add(a["href"])
-            venue, cup, day, rn = m.groups()
-            races.append({
-                "venue": venue,
-                "cup": cup,
-                "day": int(day),
-                "race": int(rn),
-                "url": BASE + a["href"],
-            })
+    """今日の全レースを集める。各レースのURLは chariloto の出走表ページ。
+    会場の列挙は keirin.jp(公式)、レース番号は chariloto の会場別一覧ページから取る。
+    日次(day)は一覧では分からないため None にし、parse_race が race_info から補う"""
+    date_s = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d")
+    races = []
+    for jocd in _venues_today(date_s):
+        venue = JOCD_VENUE.get(jocd)
+        if not venue:
+            continue
+        html = fetch(f"{BASE}/keirin/athletes/{date_s}/{jocd}", retries=1)
+        if not html:
+            continue
+        pat = re.compile(rf"^/keirin/athletes/{re.escape(date_s)}/{jocd}/(\d+)$")
+        soup = BeautifulSoup(html, "html.parser")
+        seen = set()
+        for a in soup.find_all("a", href=True):
+            m = pat.match(a["href"])
+            if m and a["href"] not in seen:
+                seen.add(a["href"])
+                races.append({
+                    "venue": venue,
+                    "cup": date_s.replace("-", ""),   # 開催の識別子(結果取得は日付ベースなので、日付で十分)
+                    "day": None,
+                    "race": int(m.group(1)),
+                    "url": BASE + a["href"],
+                    "date": date_s,
+                    "jocd": jocd,
+                })
+        time.sleep(FETCH_DELAY)
     races.sort(key=lambda x: (x["venue"], x["race"]))
     return races
 
-
-def split_name(text):
-    """'和田真久留 神奈川 S1 35歳 99期' を分解"""
-    m = re.match(r"^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)歳\s+(\d+)期", text)
-    if not m:
-        return {"name": text, "pref": "", "grade": "", "age": None, "term": None}
-    return {
-        "name": m.group(1),
-        "pref": m.group(2),
-        "grade": m.group(3),
-        "age": int(m.group(4)),
-        "term": int(m.group(5)),
-    }
+def _day_number(spent_days_string):
+    """'2日目' -> 2 / '初日' -> 1 / '最終日' など数値化できないものは None"""
+    s = spent_days_string or ""
+    if "初日" in s:
+        return 1
+    m = re.search(r"(\d+)\s*日目", s)
+    return int(m.group(1)) if m else None
 
 
-def parse_riders(soup):
-    """詳細の表(2つ目のtable)から選手データを取る"""
-    tables = soup.find_all("table")
-    if len(tables) < 2:
-        return []
-    rows = tables[1].find_all("tr")
-    header = [clean(c.get_text()) for c in rows[0].find_all(["th", "td"])]
-    if "選手名" not in header:
-        return []
-    cols = header[header.index("選手名"):]
-
-    riders = []
-    for tr in rows[1:]:
-        cells = tr.find_all(["td", "th"])
-        # 選手ページへのリンクがあるセル=選手名セル(枠のrowspan対策)
-        ni = next((i for i, c in enumerate(cells)
-                   if c.find("a", href=lambda h: h and "/cyclist/" in h)), None)
-        if ni is None:
-            continue
-        vals = [c.get_text(" ", strip=True) for c in cells[ni:]]
-        d = dict(zip(cols, vals))
-        d["車"] = to_int(cells[ni - 1].get_text(strip=True)) if ni > 0 else None
-        d.update(split_name(d.get("選手名", "")))
-        d["score"] = to_float(d.get("競走得点"))
-        a_tag = cells[ni].find("a", href=lambda h: h and "/cyclist/" in h)
-        pm = re.search(r"/cyclist/(\d+)", a_tag["href"]) if a_tag else None
-        d["pid"] = pm.group(1) if pm else None
-        riders.append(d)
-    return riders
-
-
-def parse_lines(soup):
-    """並び予想 -> [[7,1],[2,8],[5,3],[6,4]]"""
-    el = soup.find(class_=re.compile(r"^LinePrediction"))
-    if not el:
+def form_from_history(a, n=10):
+    """chariloto race_info 内蔵の直近成績(history_data1〜3)から、
+    旧 compute_form と同じ形の form {n, avg, win, top2, top3, acc, trend, kim} を作る。
+    history は開催単位で新しい順(data1 が直近。data1 は開催中の当開催分を含む)、
+    開催内は時系列順(予→準→決)に並んでいるので、開催内を逆順にして新しい順にそろえる。
+    事故(落車・失格・棄権)は short_boxes の note の「落/失/棄」から拾う(rank=0 は着順なし)。
+    連対時の決まり手内訳(kim)は元データに無いため空(現行でも実質未使用)"""
+    entries = []          # (着順 or None, 事故か)
+    for key in ("history_data1", "history_data2", "history_data3"):
+        boxes = (a.get(key) or {}).get("short_boxes") or []
+        for b in reversed(boxes):
+            rank = to_int(b.get("rank"))
+            note = b.get("note") or ""
+            acc = any(c in note for c in ("落", "失", "棄"))
+            entries.append((rank, acc))
+    if not entries:
         return None
-    txt = el.get_text(" ", strip=True)
-    lines = []
-    for part in txt.split("区切り"):
-        nums = [int(n) for n in re.findall(r"\d+", part)]
-        if nums:
-            lines.append(nums)
-    return lines or None
+    recent = entries[:n]
+    orders = [rk if rk and rk >= 1 else 9 for rk, _ in recent]   # 着順なしは9着扱い(旧 compute_form と同じ)
+    cnt = len(orders)
+    form = {
+        "n": cnt,
+        "avg": sum(orders) / cnt,
+        "win": sum(1 for o in orders if o == 1) / cnt,
+        "top2": sum(1 for o in orders if o <= 2) / cnt,
+        "top3": sum(1 for o in orders if o <= 3) / cnt,
+        "acc": sum(1 for rk, ac in recent if ac or not rk),
+        "trend": 0.0,   # プラス=上り調子(直近5走が、その前より良い)
+        "kim": {},
+    }
+    if cnt >= 8:
+        head, tail = orders[:5], orders[5:]
+        form["trend"] = sum(tail) / len(tail) - sum(head) / len(head)
+    return form
+
+
+def rider_from_athlete(a):
+    """chariloto race_info の選手データ1件を、分析層が使う従来形式の rider dict に変換する。
+    ついでに直近成績(form)を _FORM_CACHE に、縁故(rel)は取得できないため空で _REL_CACHE に入れる"""
+    car = to_int(a.get("entry_num"))
+    if car is None:
+        return None
+    pid = str(a.get("un_id")) if a.get("un_id") is not None else None
+    r = {
+        "車": car,
+        "選手名": a.get("name") or "",
+        "name": clean(a.get("name") or ""),
+        "pref": a.get("pref_name") or "",
+        "grade": clean((a.get("class_name") or "") + (a.get("group_name") or "")),   # 全角Ａ１ -> A1
+        "age": to_int(a.get("age")),
+        "term": to_int(a.get("graduate_period")),
+        "score": to_float(a.get("average_point_formatted")),   # 競走得点(生値はx1000なので formatted を使う)
+        "競走得点": a.get("average_point_formatted"),
+        "3連対率": a.get("average_rentai3_formatted"),
+        "脚": (a.get("leg_quality") or "").strip(),
+        "逃": to_int(a.get("nige_count")) or 0,
+        "捲": to_int(a.get("makuri_count")) or 0,
+        "差": to_int(a.get("sashi_count")) or 0,
+        "マ": to_int(a.get("mark_count")) or 0,
+        "ギヤ": a.get("gear_ratio"),
+        "pid": pid,
+    }
+    if pid:
+        if pid not in _FORM_CACHE:
+            _FORM_CACHE[pid] = form_from_history(a)
+        if pid not in _REL_CACHE:
+            _REL_CACHE[pid] = {}   # 縁故は新ソースでは取得できない(フェーズ2)。空なら jump_features は加点0で安全
+    return r
+
+
+def parse_lines_html(html):
+    """出走表ページの『周回予想』テーブルから並び [[5,6],[2,3],...] を作る。
+    車番のセルがラインの並び、空セル(span.p10)がグループの区切り。末尾の空セルは桁そろえ用"""
+    soup = BeautifulSoup(html, "html.parser")
+    for t in soup.find_all("table"):
+        if "周回予想" not in t.get_text():
+            continue
+        inner = t.find("table")
+        if inner is None:
+            continue
+        lines, cur = [], []
+        for td in inner.find_all("td"):
+            v = to_int(td.get_text(strip=True))
+            if v is None:
+                if cur:
+                    lines.append(cur)
+                    cur = []
+            else:
+                cur.append(v)
+        if cur:
+            lines.append(cur)
+        return lines or None
+    return None
+
+
+_RACE_URL_PAT = re.compile(r"/keirin/athletes/(\d{4}-\d{2}-\d{2})/(\d+)/(\d+)$")
 
 
 def parse_race(url):
-    html = fetch(url)
-    if not html:
+    """chariloto の出走表1レースを取得する。
+    選手データは JSON API (race_info)、並びは出走表ページHTMLの周回予想から取る"""
+    m = _RACE_URL_PAT.search(url or "")
+    if not m:
         return None
-    soup = BeautifulSoup(html, "html.parser")
-    h1 = soup.find("h1")
+    date_s, jocd, race_no = m.group(1), m.group(2), int(m.group(3))
+    raw = fetch(f"{BASE}/api/keirin/race_info"
+                f"?open_day={date_s}&vel_code={jocd}&race_num={race_no}")
+    if not raw:
+        return None
+    try:
+        info = json.loads(raw)
+    except Exception as e:
+        print("race_info の解析に失敗:", e)
+        return None
+    box = info.get("box") or {}
+    riders = []
+    for a in (info.get("race_athletes") or {}).values():
+        r = rider_from_athlete(a)
+        if r:
+            riders.append(r)
+    riders.sort(key=lambda r: r["車"])
+    if not riders:
+        return None
+    html = fetch(url)
+    lines = parse_lines_html(html) if html else None
+    # 締切は sale_to_at (ISO8601) から。旧形式の title 文字列(deadline_min / is_midnight_race が
+    # 読む形)に合わせて組み立て、分析層・セッション振り分けを無変更で動かす
+    dl_txt = ""
+    try:
+        dt = datetime.fromisoformat(box.get("sale_to_at") or "")
+        dl_txt = f"締切 {dt.hour}:{dt.minute:02d}"
+    except Exception:
+        pass
+    title = " ".join(p for p in (
+        box.get("vel_name") or "", box.get("open_grade_code") or "",
+        box.get("race_name") or "", dl_txt,
+        "ミッドナイト" if box.get("night_race_type") == "midnight" else "",
+    ) if p)
     return {
         "url": url,
-        "title": h1.get_text(" ", strip=True) if h1 else "",
-        "riders": parse_riders(soup),
-        "lines": parse_lines(soup),
+        "title": title,
+        "riders": riders,
+        "lines": lines,
+        "venue": JOCD_VENUE.get(jocd),
+        "race": race_no,
+        "day": _day_number(box.get("spent_days_string")),
+        "cup": (box.get("open_day") or date_s).replace("-", ""),
+        "date": box.get("open_day") or date_s,
+        "jocd": jocd,
     }
-
 
 def is_upcoming(deadline, now=None):
     """締切(0時からの分)がまだ先か。取れなかったときは先とみなす"""
@@ -216,8 +346,10 @@ def fetch_all_today(limit=None, only_upcoming=True):
                 dl = deadline_min(data["title"])
                 if only_upcoming and not is_upcoming(dl, now):
                     break                       # これより前のレースは締切済み
-                data.update({"venue": rc["venue"], "race": rc["race"],
-                             "day": rc["day"], "cup": rc["cup"]})
+                data.update({"venue": rc["venue"], "race": rc["race"], "cup": rc["cup"],
+                             "date": rc.get("date")})
+                if data.get("day") is None:
+                    data["day"] = rc.get("day")   # 日次は race_info 側を優先(一覧では取れない)
                 out.append(data)
             time.sleep(FETCH_DELAY)
         return out
@@ -232,105 +364,13 @@ def fetch_all_today(limit=None, only_upcoming=True):
 
 # ================= 選手ページ(直近成績) =================
 
-def extract_player_data(html):
-    """選手ページ内のJSON(window.__PRELOADED_STATE__)から、成績データを取り出す"""
-    m = re.search(r"window\.__PRELOADED_STATE__\s*=\s*", html)
-    if not m:
-        return None
-    obj, _ = json.JSONDecoder().raw_decode(html[m.end():])
-    for q in (obj.get("tanStackQuery") or {}).get("queries", []):
-        d = (q.get("state") or {}).get("data")
-        if isinstance(d, dict) and "latestCupResults" in d:
-            return d
-    return None
-
-
-def compute_form(d, n=10):
-    """直近nレースの着順・事故・連対時の決まり手をまとめる
-    raceId = レース番号(2桁) + 場コード(2桁) + 日付(8桁) と見て、日付順に並べる"""
-    seen = {}
-    for cup in d.get("latestCupResults") or []:
-        for rr in cup.get("raceResults") or []:
-            rid = str(rr.get("raceId") or "")
-            if len(rid) < 12 or rid in seen:
-                continue
-            seen[rid] = {
-                "date": rid[-8:],
-                "no": to_int(rid[:2]) or 0,
-                "order": to_int(rr.get("order")),
-                "factor": (rr.get("factor") or "").strip(),
-                "acc": bool(rr.get("hasAccident")),
-            }
-    races = sorted(seen.values(), key=lambda x: (x["date"], x["no"]), reverse=True)
-    if not races:
-        return None
-    recent = races[:n]
-    # 着順0(順位なし)は9着扱い、事故としても数える
-    orders = [x["order"] if x["order"] and x["order"] >= 1 else 9 for x in recent]
-    cnt = len(orders)
-    form = {
-        "n": cnt,
-        "avg": sum(orders) / cnt,
-        "win": sum(1 for o in orders if o == 1) / cnt,
-        "top2": sum(1 for o in orders if o <= 2) / cnt,
-        "top3": sum(1 for o in orders if o <= 3) / cnt,
-        "acc": sum(1 for x in recent if x["acc"] or not x["order"]),
-        "trend": 0.0,   # プラス=上り調子(直近5走が、その前より良い)
-        "kim": {},
-    }
-    if cnt >= 8:
-        head, tail = orders[:5], orders[5:]
-        form["trend"] = sum(tail) / len(tail) - sum(head) / len(head)
-    kim = {}
-    for x in races[:20]:
-        if x["order"] in (1, 2) and x["factor"] in ("逃", "捲", "差", "マ"):
-            kim[x["factor"]] = kim.get(x["factor"], 0) + 1
-    form["kim"] = kim
-    return form
-
-
-REL_LABELS = ("縁故選手", "友人", "練習仲間", "師匠", "弟子", "練習グループ")
-
-
-def parse_relations(html):
-    """選手ページの『縁故・知人・仲間』から、種類ごとの選手ID(登録番号)を取る。
-    例: {"練習仲間": ["012436"], "師匠": ["012436"]}。見つからなければ空"""
-    m = re.search(r"<(h[1-4])[^>]*>\s*縁故・知人・仲間", html)
-    if not m:
-        return {}
-    end = html.find("<" + m.group(1), m.end())        # 同じ階層の次の見出しまで
-    seg = html[m.start(): end if end > 0 else m.start() + 30000]
-    rel, cur = {}, None
-    for el in BeautifulSoup(seg, "html.parser").descendants:
-        if isinstance(el, NavigableString):
-            t = str(el).strip()
-            if t in REL_LABELS:
-                cur = t
-        elif getattr(el, "name", None) == "a":
-            mid = re.search(r"/cyclist/(\d+)", el.get("href") or "")
-            if mid and cur:
-                ids = rel.setdefault(cur, [])
-                if mid.group(1) not in ids:
-                    ids.append(mid.group(1))
-    return rel
-
-
 def fetch_player_form(pid):
-    html = fetch(f"{BASE}/keirin/cyclist/{pid}", retries=1)
-    if not html:
-        return None
-    try:
-        _REL_CACHE[pid] = parse_relations(html)
-    except Exception as e:
-        print(f"  relation parse error {pid}: {e}")
+    """直近成績は race_info に同梱されており、parse_race の時点で _FORM_CACHE に入っている。
+    ここではキャッシュを返すだけ(選手ページへの追加アクセスはしない)。
+    縁故(relations)は新ソースでは取得できないため、常に空(フェーズ2で keirin.jp 併用を検討)"""
+    if pid not in _REL_CACHE:
         _REL_CACHE[pid] = {}
-    try:
-        d = extract_player_data(html)
-        return compute_form(d) if d else None
-    except Exception as e:
-        print(f"  player parse error {pid}: {e}")
-        return None
-
+    return _FORM_CACHE.get(pid)
 
 _FORM_CACHE = {}
 _REL_CACHE = {}
@@ -354,6 +394,21 @@ VENUE_JP = {
     "matsuyama": "松山", "kokura": "小倉", "kurume": "久留米",
     "takeo": "武雄", "sasebo": "佐世保", "beppu": "別府", "kumamoto": "熊本",
 }
+
+VENUE_JOCD = {   # 会場スラッグ -> 公式会場コード(jocd)。chariloto / keirin.jp のURLで使う
+    "hakodate": "11", "aomori": "12", "iwakidaira": "13", "yahiko": "21",
+    "maebashi": "22", "toride": "23", "utsunomiya": "24", "omiya": "25",
+    "seibuen": "26", "keiokaku": "27", "tachikawa": "28", "matsudo": "31",
+    "chiba": "32", "kawasaki": "34", "hiratsuka": "35", "odawara": "36",
+    "ito": "37", "shizuoka": "38", "nagoya": "42", "gifu": "43",
+    "ogaki": "44", "toyohashi": "45", "toyama": "46", "matsusaka": "47",
+    "yokkaichi": "48", "fukui": "51", "nara": "53", "mukomachi": "54",
+    "wakayama": "55", "kishiwada": "56", "tamano": "61", "hiroshima": "62",
+    "hofu": "63", "takamatsu": "71", "komatsushima": "73", "kochi": "74",
+    "matsuyama": "75", "kokura": "81", "kurume": "83", "takeo": "84",
+    "sasebo": "85", "beppu": "86", "kumamoto": "87",
+}
+JOCD_VENUE = {v: k for k, v in VENUE_JOCD.items()}
 
 
 VENUE_BANK = {   # (周長m, みなし直線m)。出典: 各競輪場公式コース案内(oddspark等)。
@@ -966,7 +1021,7 @@ def analyze(race):
     by_car = {r["車"]: r for r in riders}
 
     # ガールズは規則上ラインを組めないため、常にライン無し(個人の力量)で評価する。
-    # 男子は、実際にウィンチケットにある並び予想をそのまま使う(単騎だけの選手がいてもよい)
+    # 男子は、実際に chariloto にある並び予想(周回予想)をそのまま使う(単騎だけの選手がいてもよい)
     lines = [] if girls else (race.get("lines") or [])
     pos_notes = []
     if lines:
@@ -1610,7 +1665,11 @@ def race_learn_row(race):
         for car, f in pf.items():
             feats.setdefault(car, {}).update(f)
     pos = line_position_labels(lines)
+    d = (race.get("date") or "").replace("-", "")
+    if len(d) != 8:
+        d = datetime.now(timezone(timedelta(hours=9))).strftime("%Y%m%d")
     return {"k": f"{race['venue']}-{race.get('cup')}-{race.get('day')}-{race['race']}",
+            "d": d,
             "g": int(girls), "v": race["venue"],
             "pos": pos,
             "r": [[c, r["score"], [round(feats[c].get(k, 0.0), 3) for k in LEARN_KEYS]]
