@@ -1,0 +1,70 @@
+[
+ {
+  "time": "20:07",
+  "session": "all",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "20261116",
+    "day": null,
+    "race": 4,
+    "axis": 1,
+    "axis_name": "富永益生",
+    "partners": [
+     2,
+     3,
+     5
+    ],
+    "bet": "1→2,3,5 (2車単 軸流し)",
+    "score": 22.72,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      3
+     ],
+     "third": [
+      2,
+      3,
+      5,
+      6
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "奈良",
+    "venue_key": "nara",
+    "cup": "20261116",
+    "day": null,
+    "race": 5,
+    "axis": 1,
+    "axis_name": "望月一成",
+    "partners": [
+     2,
+     4,
+     3
+    ],
+    "bet": "1→2,4,3 (2車単 軸流し)",
+    "score": 10.99,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      3,
+      5
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
