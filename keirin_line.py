@@ -1102,11 +1102,17 @@ def analyze(race):
     if spread < 4:
         ara_tags.append("評価団子")
 
-    # ---- 買い目(本命向き): 評価1位を軸、同ラインと評価上位を相手 ----
+    # ---- 買い目(本命向き): 評価1位を軸、評価上位+同ラインを相手 ----
     if not lines:
         partners = [r["車"] for r in riders[1:4]]
     else:
-        partners = [c for c in top_line if c != top]
+        # 配分型(改善ラウンド1・A3): 評価上位2人を土台に、同ラインから1人を足す。
+        # 従来は同ライン全員が先に入り、評価上位の別ライン選手が漏れることがあった
+        partners = [r["車"] for r in riders[1:3]]
+        for c in top_line:
+            if c != top and c not in partners:
+                partners.append(c)
+                break
         for r in riders[1:]:
             if r["車"] not in partners and r["車"] != top:
                 partners.append(r["車"])
