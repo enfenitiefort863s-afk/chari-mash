@@ -77,12 +77,28 @@ def enrich_top(races, top=5):
 
 MIN_STARS = int(os.environ.get("MIN_STARS") or 4)   # 学習データが少ないうちから効く、最低限の星の数(絞り込み強め)
 
+DAYTIME_SUPPRESS_SCORE = 20.0   # 昼セグメント×低スコアの抑制ライン(改善ラウンド1・B)
+
+
+def is_daytime_segment():
+    """結果記録の slot(配信時刻)で分類した『昼』セグメントに、今回の配信が当たるか。
+    朝の部(day)は常に昼、ミッドナイト(midnight)は常に夜。
+    手動実行(all)は配信時刻が17時より前なら昼として扱う(過去データの分類と同じ物差し)。
+    過去627件の試算では、昼×スコア20未満は回収率46%と突出して悪く、
+    除外すると全体の回収率が70%→78%に改善する見込み(KEIRIN_IMPROVEMENT_PLAN 第5節)"""
+    if SESSION == "day":
+        return True
+    if SESSION == "midnight":
+        return False
+    return datetime.now(JST).hour < 17
+
 
 def apply_min_score(honmei, ara):
     """自信の無いレースを間引く。
     1) 実際の的中率・回収率から学習したしきい値(60件たまってから有効)
     2) それとは別に、星の数が一定未満のものは常に外す(データが少ないうちの安全弁)
-    どちらも、全部外すと0件になる場合は、念のため一番上のものだけ残す"""
+    3) 昼セグメントでは、スコア20未満を外す(弱セグメントの抑制。改善ラウンド1・B)
+    どれも、全部外すと0件になる場合は、念のため残りの候補から残す"""
     def threshold_for(x, kind):
         per_venue = (k.MIN_SCORE_VENUE or {}).get(kind) or {}
         if x.get("venue") in per_venue:
@@ -98,7 +114,11 @@ def apply_min_score(honmei, ara):
         kept = [x for x in xs
                 if threshold_for(x, kind) is None or thr_val(x) >= threshold_for(x, kind)]
         kept2 = [x for x in kept if k.stars(x[kind]).count("★") >= MIN_STARS]
-        return kept2 or kept or xs[:1]
+        kept3 = kept2
+        if is_daytime_segment():
+            # スコアは結果記録と同じ物差し(狙い目は狙い目度)で見る
+            kept3 = [x for x in kept2 if x[kind] >= DAYTIME_SUPPRESS_SCORE]
+        return kept3 or kept2 or kept or xs[:1]
 
     honmei = filter_by(honmei, "honmei")
     ara = filter_by(ara, "ara")
