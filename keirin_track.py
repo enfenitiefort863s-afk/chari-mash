@@ -464,6 +464,32 @@ def pickup_riders(rows, limit=3):
     return out
 
 
+def highlight_lines(rows):
+    """その日の結果から、見て楽しいハイライトを短い行で返す(改善ラウンド1・楽しみ要素)。
+    🎯軸ドンピシャ(軸1着+買い目的中) / 💰今日の一番の当たり(払戻合計が最大) /
+    😱惜しかったレース(軸3着内なのに買い目を外した=改善対象そのもの)。
+    数字は記録のまま正直に出し、煽る表現はしない。該当が無ければ空リスト"""
+    ok = [r for r in rows if str(r.get("status")) == "ok"]
+    out = []
+
+    def who(r):
+        return r.get("axis_name") or f"{r['axis']}番"
+
+    don = [r for r in ok if str(r.get("axis_finish")) == "1" and str(r.get("hit")) == "1"]
+    for r in don[:2]:
+        out.append(f"🎯軸ドンピシャ {r['venue']}{r['race']}R {who(r)} 払戻{int(r['payout']):,}円")
+    paid = [r for r in ok if int(r.get("payout") or 0) + int(r.get("t3_payout") or 0) > 0]
+    if paid:
+        best = max(paid, key=lambda r: int(r.get("payout") or 0) + int(r.get("t3_payout") or 0))
+        amt = int(best.get("payout") or 0) + int(best.get("t3_payout") or 0)
+        out.append(f"💰今日の一番の当たり {best['venue']}{best['race']}R 払戻{amt:,}円")
+    near = [r for r in ok if str(r.get("axis_finish")) in ("1", "2", "3")
+            and str(r.get("hit")) == "0"]
+    for r in near[:2]:
+        out.append(f"😱惜しかった {r['venue']}{r['race']}R {who(r)} 軸{str(r.get('axis_finish'))}着(あと一歩)")
+    return out[:4]
+
+
 def report_date_str(now, slot=None):
     """対象の日付。
     slot='night' (23:40の予定): 通常は当日。ただし深夜0時を越えて実行が遅れた場合は、
@@ -507,6 +533,10 @@ def build_report_embeds(new_rows):
     if hits:
         fields.append({"name": "✅的中", "inline": False, "value": _fit(" / ".join(
             f"{r['venue']}{r['race']}R {int(r['payout']):,}円" for r in hits))})
+    hl = highlight_lines(src)
+    if hl:
+        fields.append({"name": "✨本日のハイライト", "inline": False,
+                       "value": _fit("\n".join(hl))})
     pu = pickup_riders(src)
     if pu:
         fields.append({"name": "🏆本日の好走ピックアップ", "inline": False,
@@ -608,6 +638,11 @@ def build_report(new_rows):
     if hits:
         out.append("✅的中: " + " / ".join(
             f"{r['venue']}{r['race']}R {int(r['payout']):,}円" for r in hits))
+    hl = highlight_lines(src)
+    if hl:
+        out.append("")
+        out.append("✨本日のハイライト")
+        out += hl
     pu = pickup_riders(src)
     if pu:
         out.append("")
