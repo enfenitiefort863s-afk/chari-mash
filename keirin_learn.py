@@ -11,7 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import keirin_web as kw
 from keirin_line import LEARN_KEYS, PRIOR_WEIGHTS, VENUE_JP, WORKERS
-from keirin_track import DATA_DIR, LEARN_DIR, fetch_results_page, read_rows
+from keirin_track import (DATA_DIR, LEARN_DIR, fetch_results_page, read_rows,
+                          rebuild_venue_stats, record_rider_results, records_from_page)
 
 MODEL_PATH = os.environ.get("MODEL_PATH") or os.path.join(DATA_DIR, "model.json")
 MIN_RACES = 150          # これ未満なら、まだ重みを更新しない
@@ -133,7 +134,7 @@ def tune_thresholds():
     どちらも直近 LOOKBACK_PER_KIND 件だけを使い、古い傾向に引きずられないようにする"""
     rows = [r for r in read_rows() if str(r.get("status")) == "ok" and r.get("score") not in (None, "")]
     out, out_venue = {}, {}
-    for kind in ("honmei", "ara"):
+    for kind in ("honmei", "ara", "osusume"):
         rs_all = [r for r in rows if r["kind"] == kind]
         rs_all.sort(key=lambda r: r.get("date", ""), reverse=True)   # 新しい順
         rs_recent = rs_all[:LOOKBACK_PER_KIND]
@@ -223,6 +224,26 @@ def datetime_now_str():
     return datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M")
 
 
+def update_rider_venue_db(rows):
+    """結果ページ(選手名つき着順)から、選手×会場データベースを蓄積・再集計する。
+    結果ページは (会場,日付) 単位でキャッシュ済みのため、追加の通信はほぼ発生しない"""
+    pages = {}
+    for row in rows:
+        parts = (row.get("k") or "").split("-")
+        date_ymd = str(row.get("d") or row.get("_file_date") or "")
+        if len(parts) < 4 or len(date_ymd) != 8:
+            continue
+        pages.setdefault((parts[0], date_ymd))
+    records = []
+    for venue, date_ymd in pages:
+        page = fetch_results_page(venue, date_ymd)
+        if page:
+            records += records_from_page(venue, date_ymd, page)
+    added = record_rider_results(records)
+    n_riders = rebuild_venue_stats()
+    print(f"選手×会場DB: {added}件を追加(対象選手 {n_riders}人)")
+
+
 def main():
     rows = load_learn_rows()
     print(f"学習データ候補 {len(rows)}レース")
@@ -265,6 +286,12 @@ def main():
 
     if rows and results:
         update_kimarite_stats(rows, results)
+
+    if rows:
+        try:
+            update_rider_venue_db(rows)
+        except Exception as e:
+            print("選手×会場DBの更新に失敗(学習は継続します):", e)
 
     if not model:
         print("更新できるものがありませんでした")

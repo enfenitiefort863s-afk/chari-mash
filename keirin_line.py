@@ -584,6 +584,46 @@ def load_min_score_venue(path=None):
 MIN_SCORE_VENUE = load_min_score_venue()
 
 
+# ---------------- 選手×会場の相性(2026-11-18 追加) ----------------
+# data/rider_venue_stats.json は、結果ページの選手名つき着順を蓄積した
+# 選手×会場データベースの集計(keirin_track.rebuild_venue_stats が夜間に更新)。
+# 「その会場で、本人の普段の平均着順より走れているか」を見るのが肝で、
+# 単に強い選手(全体成績が良い)ではなく『当所相性』だけを拾う。
+VENUE_STATS_PATH = os.environ.get("VENUE_STATS_PATH") or "data/rider_venue_stats.json"
+
+
+def load_venue_stats(path=None):
+    try:
+        with open(path or VENUE_STATS_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+VENUE_STATS = load_venue_stats()
+VENUE_MIN_OVERALL = 5    # 本人の全体成績がこれ未満だと、相性の判定材料にしない
+VENUE_MIN_RACES = 2      # 当該会場でこれ未満の出走数だと、相性を付けない(1走だけは偶然が大きい)
+VENUE_SHRINK = 4.0       # 会場平均を全体平均へ寄せる強さ(出走数が少ないほど全体寄り)
+VENUE_ADJ_MAX = 1.2      # 評価点への換算の上限(±)
+
+
+def venue_adj(name, venue_key):
+    """選手の当所相性を、評価点への加点(±VENUE_ADJ_MAX)に換算して返す。
+    戻り値: (加点, 統計) 統計は {"n": 当所出走数, "avg": 当所平均着順, "w": 当所1着数}
+    材料が足りない場合は (0.0, None)"""
+    st = VENUE_STATS.get(name or "")
+    if not st or int(st.get("n", 0)) < VENUE_MIN_OVERALL:
+        return 0.0, None
+    v = (st.get("venues") or {}).get(venue_key)
+    if not v or int(v.get("n", 0)) < VENUE_MIN_RACES:
+        return 0.0, None
+    overall_avg = st["sum"] / st["n"]
+    shrunk = (v["sum"] + VENUE_SHRINK * overall_avg) / (v["n"] + VENUE_SHRINK)
+    adj = (overall_avg - shrunk) * 0.55
+    adj = max(-VENUE_ADJ_MAX, min(VENUE_ADJ_MAX, adj))
+    return round(adj, 3), {"n": int(v["n"]), "avg": v["sum"] / v["n"], "w": int(v.get("w", 0))}
+
+
 def rider_feats(r):
     """選手ごとの特徴量。3連対率・自力(逃/捲)・差し/マークの実績"""
     def k(key):
@@ -1047,6 +1087,15 @@ def analyze(race):
             by_car[car]["rating"] += bb
     pos_notes += bnotes
 
+    # 選手×会場の相性(その会場で、本人の普段の平均より走れているか)を評価点に反映する。
+    # バンク特性(脚質×バンク形状)とは別物で、こちらは選手個人の当所実績ベース
+    for r in riders:
+        adj, stat = venue_adj(r.get("name"), race["venue"])
+        r["venue_adj"] = adj
+        r["venue_stat"] = stat
+        if adj:
+            r["rating"] += adj
+
     riders.sort(key=lambda r: -r["rating"])
     sc = [r["rating"] for r in riders]      # 以降の計算は評価点で行う
     line_of = {c: i for i, ln in enumerate(lines) for c in ln}
@@ -1194,6 +1243,23 @@ def analyze(race):
                      else "堅さと配当のバランスが良い狙い目" if nerai >= 9.5
                      else "一発に賭ける狙い目")
 
+    # ---- おすすめ度(2026-11-18 方式変更: 本命/狙い目の2枠を廃止し、単一指標に統一) ----
+    # 土台は本命度(評価差ベース。会場相性は評価点に織り込み済みなので差にも反映される)。
+    # そのうえで「軸本人が当所相性◎」のレースをさらに押し上げる(読みやすさの加点)
+    axis_adj = by_car[top].get("venue_adj", 0.0)
+    p_adjs = [by_car[c].get("venue_adj", 0.0) for c in partners if c in by_car]
+    partners_adj = sum(p_adjs) / len(p_adjs) if p_adjs else 0.0
+    osusume = honmei + axis_adj * 1.5 + partners_adj * 0.5
+    osusume_verdict = ("鉄板級のおすすめ" if osusume >= 20
+                       else "おすすめ" if osusume >= 13 else "おすすめ候補")
+    osusume_tags = list(honmei_tags)
+    axis_stat = by_car[top].get("venue_stat")
+    if axis_stat:
+        if axis_stat["avg"] <= 3.5:
+            osusume_tags.append(f"軸は当所◎{axis_stat['n']}走・平均{axis_stat['avg']:.1f}着")
+        elif axis_stat["avg"] >= 5.0:
+            osusume_tags.append(f"軸は当所△{axis_stat['n']}走・平均{axis_stat['avg']:.1f}着")
+
     return {
         "venue": VENUE_JP.get(race["venue"], race["venue"]),
         "venue_key": race["venue"],
@@ -1202,6 +1268,7 @@ def analyze(race):
         "deadline": deadline_min(race.get("title")),
         "girls": girls, "girls_cmp": [] if lines else girls_compare(riders),
         "honmei": honmei, "ara": ara, "nerai": nerai, "nerai_verdict": nerai_verdict,
+        "osusume": osusume, "osusume_verdict": osusume_verdict, "osusume_tags": osusume_tags,
         "by_car": by_car, "lines": lines,
         "honmei_axis": top, "honmei_partners": partners,
         "honmei_bet": honmei_bet, "honmei_tags": honmei_tags,
@@ -1246,6 +1313,33 @@ def nerai_view(x):
     return y
 
 
+def osusume_view(x):
+    """おすすめレース用の見せ方に組み替えた分析結果を返す(2026-11-18 方式変更)。
+    軸・相手・買い目・展開は本命サイドを使い、スコアはおすすめ度にする。
+    配信の記録・結果判定もこの内容で統一される(save_picks_u は osusume_* を読む)"""
+    y = dict(x)
+    for key in ("axis", "partners", "bet", "flow", "tri"):
+        y[f"osusume_{key}"] = x[f"honmei_{key}"]
+    y["osusume_tags"] = x.get("osusume_tags") or x["honmei_tags"]
+    y["osusume_verdict"] = x["osusume_verdict"]
+    return y
+
+
+def pick_osusume(results, only_upcoming=True, n=5):
+    """おすすめレースだけを単一指標(おすすめ度)で選ぶ。
+    本命/狙い目の2枠制は 2026-11-18 に廃止(ユーザー指示)"""
+    now = now_min_jst()
+    rows = []
+    for rc in results:
+        a = analyze(rc)
+        if not a:
+            continue
+        if only_upcoming and not is_upcoming(a["deadline"], now):
+            continue
+        rows.append(a)
+    return [osusume_view(x) for x in sorted(rows, key=lambda x: -x["osusume"])[:n]]
+
+
 def fmt_time(m):
     return f"{m // 60}:{m % 60:02d}" if m is not None else "--:--"
 
@@ -1261,6 +1355,17 @@ def stars(score):
     """得点を★1〜5にする目安(4点刻み)"""
     n = max(1, min(5, int(score // 4) + 1))
     return "★" * n + "☆" * (5 - n)
+
+
+KIND_ICON = {"honmei": "🎯", "ara": "🔥", "osusume": "⭐"}
+KIND_LABEL_TXT = {"honmei": "🎯本命", "ara": "🔥狙い目", "osusume": "⭐おすすめ"}
+
+
+def kind_score(x, kind):
+    """種類ごとのスコアを取り出す(おすすめはおすすめ度、本命は本命度、狙い目は狙い目度)"""
+    if kind == "osusume":
+        return x["osusume"]
+    return x["honmei"] if kind == "honmei" else x["ara"]
 
 
 def cs(cars):
@@ -1321,6 +1426,9 @@ def race_block(x, kind, idx, level=3):
     if kind == "honmei":
         axis, partners, flow, tri = x["honmei_axis"], x["honmei_partners"], x["honmei_flow"], x["honmei_tri"]
         tags, verdict, score, icon = x["honmei_tags"], x["honmei_verdict"], x["honmei"], "🎯"
+    elif kind == "osusume":
+        axis, partners, flow, tri = x["osusume_axis"], x["osusume_partners"], x["osusume_flow"], x["osusume_tri"]
+        tags, verdict, score, icon = x["osusume_tags"], x["osusume_verdict"], x["osusume"], "⭐"
     else:
         axis, partners, flow, tri = x["ara_axis"], x["ara_partners"], x["ara_flow"], x["ara_tri"]
         tags, verdict, score, icon = x["ara_tags"], x["ara_verdict"], x["ara"], "🔥"
@@ -1352,7 +1460,7 @@ def race_block(x, kind, idx, level=3):
 
 
 def footer():
-    lines = ["🎯=本命サイド　🔥=狙い目", "評価=得点+成績などの補正"]
+    lines = ["⭐=おすすめレース", "評価=得点+成績・当所相性などの補正"]
     if MODEL_RACES:
         lines.append(f"評価は過去{MODEL_RACES}レースの結果で調整済み")
     lines.append("※参考情報です。的中や回収を保証するものではありません。")
@@ -1372,8 +1480,8 @@ def pick_list(picks, show_venue):
     """『おすすめレース』の一覧(締切順)"""
     out = ["🏁おすすめレース"]
     for kind, x in picks:
-        icon = "🎯" if kind == "honmei" else "🔥"
-        score = x["honmei"] if kind == "honmei" else x["ara"]
+        icon = KIND_ICON.get(kind, "🎯")
+        score = kind_score(x, kind)
         place = x["venue"] if show_venue else ""
         out.append(f"{icon}{place}{x['race']}R　⏰{fmt_time(x['deadline'])}　{stars(score)}")
     return out
@@ -1384,18 +1492,32 @@ def sort_picks(honmei, ara):
     return sorted(picks, key=lambda t: (t[1]["deadline"] if t[1]["deadline"] is not None else 9999, t[1]["race"]))
 
 
+def sort_picks_u(picks):
+    """おすすめ単一枠の (kind, x) リストを締切順にする"""
+    pairs = [("osusume", x) for x in picks]
+    return sorted(pairs, key=lambda t: (t[1]["deadline"] if t[1]["deadline"] is not None else 9999, t[1]["race"]))
+
+
 def forecast_pickup_lines(honmei, ara, limit=3):
+    return _pickup_lines(sort_picks(honmei, ara), limit)
+
+
+def forecast_pickup_lines_u(picks, limit=3):
+    return _pickup_lines(sort_picks_u(picks), limit)
+
+
+def _pickup_lines(picks, limit=3):
     """予想時点のピックアップ選手。おすすめレースの軸選手から、
     総合評価(星) → 軸の評価点 → 直近の3着内率 の順で上位を選ぶ。
     結果後の好走ピックアップ(keirin_track.pickup_riders)とは別物で、
     レース前に「今日はこの選手に注目」を出すための欄。"""
     cand = []
-    for kind, x in sort_picks(honmei, ara):
-        axis = x["honmei_axis"] if kind == "honmei" else x["ara_axis"]
+    for kind, x in picks:
+        axis = x[f"{kind}_axis"]
         r = x["by_car"].get(axis)
         if not r or not r.get("name"):
             continue
-        score = x["honmei"] if kind == "honmei" else x["ara"]
+        score = kind_score(x, kind)
         f = r.get("form") or {}
         top3 = f["top3"] if f.get("n", 0) >= 3 and f.get("top3") is not None else -1
         key = (stars(score).count("★"), r.get("rating") or 0, top3)
@@ -1414,8 +1536,8 @@ def forecast_pickup_lines(honmei, ara, limit=3):
         return []
     out = ["", "⭐本日のピックアップ選手"]
     for _, kind, x, axis, r, score in chosen:
-        icon = "🎯本命" if kind == "honmei" else "🔥狙い目"
-        verdict = x["honmei_verdict"] if kind == "honmei" else x["ara_verdict"]
+        icon = KIND_LABEL_TXT.get(kind, "")
+        verdict = x.get(f"{kind}_verdict", "")
         kyaku = r.get("脚", "")
         out.append(f"・{x['venue']}{x['race']}R　⏰{fmt_time(x['deadline'])}　{icon}")
         out.append(f"　◎{circ(axis)} {r['name']}" + (f"({kyaku})" if kyaku else "")
@@ -1425,6 +1547,9 @@ def forecast_pickup_lines(honmei, ara, limit=3):
         if f and f.get("n", 0) >= 3:
             mood = "(上り調子)" if f["trend"] >= 1.0 else ("(下り調子)" if f["trend"] <= -1.0 else "")
             out.append(f"　📈直近{f['n']}走 平均{f['avg']:.1f}着 3着内{f['top3'] * 100:.0f}%{mood}")
+        vs = r.get("venue_stat")
+        if vs and vs["n"] >= 3:
+            out.append(f"　🏟当所{vs['n']}走 平均{vs['avg']:.1f}着（1着{vs['w']}回）")
     return out
 
 
@@ -1478,8 +1603,8 @@ def smart_flow_lines(x, kind):
 
 def smart_race_block(x, kind, level=3):
     """1レースのスマート版ブロック: 見出し→並び→展開→選手(評価順)→買い目→一言"""
-    score = x["honmei"] if kind == "honmei" else x["ara"]
-    label = "🎯本命" if kind == "honmei" else "🔥狙い目"
+    score = kind_score(x, kind)
+    label = KIND_LABEL_TXT.get(kind, "")
     out = [f"🏁 {VENUE_JP.get(x['venue'], x['venue'])}{x['race']}R "
            f"⏰{fmt_time(x.get('deadline'))} {label} {stars(score)}"]
     if x.get("lines"):
@@ -1496,6 +1621,9 @@ def smart_race_block(x, kind, level=3):
         form = r.get("form") or {}
         if level >= 2 and form.get("n"):
             s += f"｜3着内{form['top3'] * 100:.0f}%"
+        vs = r.get("venue_stat")
+        if vs and vs["n"] >= 3:
+            s += f"｜当所{vs['n']}走平均{vs['avg']:.1f}着"
         out.append(s)
     if partners:
         out.append(f"**2車単：{circ(axis)}→{''.join(circ(c) for c in partners)}**")
@@ -1511,12 +1639,20 @@ def smart_race_block(x, kind, level=3):
 
 
 def build_message(honmei, ara, level=3, enforce_limit=True):
+    return _build_message(sort_picks(honmei, ara), level, enforce_limit)
+
+
+def build_message_u(picks, level=3, enforce_limit=True):
+    """おすすめ単一枠版のフル文面"""
+    return _build_message(sort_picks_u(picks), level, enforce_limit)
+
+
+def _build_message(picks, level=3, enforce_limit=True):
     """スマート版フル文面。Discord配信とページ(GitHub Pages)に使う"""
     jst = datetime.now(timezone(timedelta(hours=9)))
-    picks = sort_picks(honmei, ara)
     out = [f"🏇 **本日のおすすめ**（{jst.month}/{jst.day} {jst.hour}:{jst.minute:02d}時点）", ""]
     out += pick_list(picks, True)
-    out += forecast_pickup_lines(honmei, ara)
+    out += _pickup_lines(picks)
     out.append("")
     for kind, x in picks:
         out.append(smart_race_block(x, kind, level))
@@ -1524,17 +1660,24 @@ def build_message(honmei, ara, level=3, enforce_limit=True):
     out.append("※参考情報です。的中や回収を保証するものではありません。")
     msg = "\n".join(out)
     if enforce_limit and line_len(msg) > LINE_LIMIT and level > 0:
-        return build_message(honmei, ara, level - 1, enforce_limit)
+        return _build_message(picks, level - 1, enforce_limit)
     return msg
 
 
 def build_short_message(honmei, ara, url=None):
+    return _build_short_message(sort_picks(honmei, ara), url)
+
+
+def build_short_message_u(picks, url=None):
+    return _build_short_message(sort_picks_u(picks), url)
+
+
+def _build_short_message(picks, url=None):
     """LINE用の短い版。おすすめレースの一覧だけを出し、詳細はページのURLに誘導する"""
     jst = datetime.now(timezone(timedelta(hours=9)))
-    picks = sort_picks(honmei, ara)
     out = [f"📅 {jst.month}/{jst.day} {jst.hour}:{jst.minute:02d} 時点", ""]
     out += pick_list(picks, True)
-    out += forecast_pickup_lines(honmei, ara)
+    out += _pickup_lines(picks)
     out.append("")
     if url:
         out.append(f"🔗展開予想・買い目はこちら\n{url}")
@@ -1547,7 +1690,7 @@ def build_short_message(honmei, ara, url=None):
 # テキストの羅列ではなく、色帯つきのカードで届ける(2026-11-05 ユーザー決定)。
 # Discordの上限: 1回の送信でEmbed最大10枚 / 合計6000文字 / フィールド値1024文字。
 EMBED_COLORS = {"header": 0x3498DB, "pickup": 0xF1C40F,
-                "honmei": 0x2ECC71, "ara": 0xE67E22}
+                "honmei": 0x2ECC71, "ara": 0xE67E22, "osusume": 0x8E44AD}
 EMBED_TOTAL_LIMIT = 5500   # 合計上限6000に余裕を持たせた値
 
 
@@ -1557,8 +1700,8 @@ def _fit_field(v, limit=1024):
 
 def smart_race_embed(x, kind):
     """1レース分のEmbed(カード)。中身はスマート版テキストと同じ部品から作る"""
-    score = x["honmei"] if kind == "honmei" else x["ara"]
-    label = "🎯本命" if kind == "honmei" else "🔥狙い目"
+    score = kind_score(x, kind)
+    label = KIND_LABEL_TXT.get(kind, "")
     fields = []
     if x.get("lines"):
         fields.append({"name": "並び", "inline": False, "value": _fit_field(" ｜ ".join(
@@ -1579,6 +1722,9 @@ def smart_race_embed(x, kind):
         form = r.get("form") or {}
         if form.get("n"):
             s += f"｜3着内{form['top3'] * 100:.0f}%"
+        vs = r.get("venue_stat")
+        if vs and vs["n"] >= 3:
+            s += f"｜当所{vs['n']}走平均{vs['avg']:.1f}着"
         rlines.append(s)
     if rlines:
         fields.append({"name": "選手", "inline": False,
@@ -1606,15 +1752,23 @@ def smart_race_embed(x, kind):
 
 
 def build_forecast_embeds(honmei, ara):
+    return _build_forecast_embeds(sort_picks(honmei, ara))
+
+
+def build_forecast_embeds_u(picks):
+    """おすすめ単一枠版のEmbed一式"""
+    return _build_forecast_embeds(sort_picks_u(picks))
+
+
+def _build_forecast_embeds(picks):
     """予想配信のEmbed一式: ヘッダー＋ピックアップ＋レースごとのカード"""
     jst = datetime.now(timezone(timedelta(hours=9)))
-    picks = sort_picks(honmei, ara)
     embeds = [{
         "title": f"🏇 本日のおすすめ（{jst.month}/{jst.day} {jst.hour}:{jst.minute:02d}時点）",
         "color": EMBED_COLORS["header"],
         "description": "\n".join(pick_list(picks, True)[1:]),
     }]
-    pickup = forecast_pickup_lines(honmei, ara)
+    pickup = _pickup_lines(picks)
     if len(pickup) > 2:
         embeds.append({
             "title": "⭐ 本日のピックアップ選手",
@@ -1678,6 +1832,7 @@ def race_learn_row(race):
             "d": d,
             "g": int(girls), "v": race["venue"],
             "pos": pos,
+            "names": {c: r.get("name", "") for c, r in by_car.items()},
             "r": [[c, r["score"], [round(feats[c].get(k, 0.0), 3) for k in LEARN_KEYS]]
                   for c, r in by_car.items()]}
 
@@ -1832,6 +1987,29 @@ def send_forecast(honmei, ara, full_text, url):
             print(f"{c} への送信に失敗しました: {e}")
             errors.append(e)
     if len(errors) == len(channels):                     # すべて失敗したときだけ、呼び出し側にエラーを返す
+        raise errors[0]
+
+
+def send_forecast_u(picks, full_text, url):
+    """おすすめ単一枠版の予想送信。送り分けの規則は send_forecast と同じ"""
+    channels = notify_channels()
+    if not channels:
+        print("送り先が設定されていないため、送信せず表示のみ")
+        print(full_text)
+        return
+    errors = []
+    for c in channels:
+        try:
+            if c == "discord":
+                _send_discord_embeds(build_forecast_embeds_u(picks))
+            else:
+                text = full_text if line_len(full_text) <= LINE_LIMIT \
+                    else build_short_message_u(picks, url)
+                _send_line_only([text])
+        except Exception as e:
+            print(f"{c} への送信に失敗しました: {e}")
+            errors.append(e)
+    if len(errors) == len(channels):
         raise errors[0]
 
 

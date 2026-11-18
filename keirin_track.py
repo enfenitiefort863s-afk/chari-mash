@@ -20,7 +20,7 @@ FIELDS = ["pick_id", "date", "slot", "kind", "venue", "venue_key", "race",
           "axis", "axis_name", "partners", "score", "axis_finish", "first", "second", "third",
           "kimarite", "hit", "cost", "payout", "status",
           "t3_hit", "t3_cost", "t3_payout"]
-KIND_LABEL = {"honmei": "🎯本命", "ara": "🔥狙い目"}
+KIND_LABEL = {"osusume": "⭐おすすめ", "honmei": "🎯本命", "ara": "🔥狙い目"}
 
 
 # ---------------- 配信した買い目の保存 ----------------
@@ -61,6 +61,44 @@ def save_picks(honmei, ara, results, session=""):
                 "score": round(x.get(kind, 0.0), 2),   # 本命度/荒れ度のスコア(あとで学習に使う)
                 "tri": x.get(f"{kind}_tri"),
             })
+    if not picks:
+        return
+    os.makedirs(PICK_DIR, exist_ok=True)
+    path = os.path.join(PICK_DIR, now.strftime("%Y%m%d") + ".json")
+    entries = []
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                entries = json.load(f)
+        except Exception:
+            entries = []
+    entries.append({"time": now.strftime("%H:%M"), "session": session, "picks": picks})
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(entries, f, ensure_ascii=False, indent=1)
+    print(f"買い目を保存しました: {path} ({len(picks)}件)")
+
+
+def save_picks_u(picks_in, results, session=""):
+    """配信した『おすすめレース』の買い目を data/picks/YYYYMMDD.json に追記する。
+    2026-11-18 の方式変更で、本命/狙い目の2枠は廃止し、おすすめ(kind=osusume)の
+    単一枠に統一した。古い save_picks は過去データ・テスト互換のため残す"""
+    info_of = {(rc["venue"], rc["race"]): rc for rc in results}
+    now = datetime.now(JST)
+    picks = []
+    for x in picks_in:
+        rc = info_of.get((x["venue_key"], x["race"]))
+        if not rc or rc.get("cup") is None:
+            print(f"買い目を保存できません(開催ID不明): {x['venue_key']} {x['race']}R kind=osusume")
+            continue
+        axis = x["osusume_axis"]
+        picks.append({
+            "kind": "osusume", "venue": x["venue"], "venue_key": x["venue_key"],
+            "cup": str(rc["cup"]), "day": rc.get("day"), "race": x["race"],
+            "axis": axis, "axis_name": (x["by_car"].get(axis) or {}).get("name", ""),
+            "partners": list(x["osusume_partners"]), "bet": x["osusume_bet"],
+            "score": round(x.get("osusume", 0.0), 2),
+            "tri": x.get("osusume_tri"),
+        })
     if not picks:
         return
     os.makedirs(PICK_DIR, exist_ok=True)
@@ -171,8 +209,8 @@ def parse_results_page(html):
             flush()
             n_fin += 1
             cur_race = _race_no_before(t) or n_fin
-            cur = {"orders": {}, "kimarite": "", "payouts": {}}
-            i_ord, i_car = head.index("着"), head.index("車番")
+            cur = {"orders": {}, "kimarite": "", "payouts": {}, "names": {}}
+            i_ord, i_car, i_name = head.index("着"), head.index("車番"), head.index("選手名")
             i_kim = head.index("決まり手") if "決まり手" in head else None
             for tr in rows[1:]:
                 cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
@@ -183,6 +221,8 @@ def parse_results_page(html):
                     continue
                 order = to_int(cells[i_ord])   # 落車・失格などは数値でないため None
                 cur["orders"][car] = order
+                if i_name < len(cells):
+                    cur["names"][car] = clean(cells[i_name])
                 if order == 1 and i_kim is not None and i_kim < len(cells):
                     cur["kimarite"] = cells[i_kim]
         elif cur is not None and head and head[0] in ("2枠連", "2車連", "3連勝", "ワイド"):
@@ -296,7 +336,7 @@ def performance_stats():
     """回収率・的中率を、ページでグラフにする用にまとめる(本命/荒れ別・会場別・日別推移)"""
     rows = read_rows()
     by_kind = {}
-    for kind in ("honmei", "ara"):
+    for kind in KIND_LABEL:
         s = _agg([r for r in rows if r["kind"] == kind])
         if s:
             by_kind[kind] = s
@@ -675,3 +715,94 @@ def build_report(new_rows):
         out.append(f"🔗これまでの配信・結果はこちら\n{url}")
     out.append("※2車単・3連単とも各100円で計算。参考情報です。")
     return "\n".join(out)
+
+
+# ---------------- 選手×会場データベース(会場相性) ----------------
+# 結果ページには選手名が載っているので、(日付,会場,レース,選手名)単位で
+# 着順を蓄積し、選手ごとの「全体成績」と「会場別成績」の統計JSONを作る。
+# 予想側(keirin_line.venue_adj)はこの統計を見て、その会場で本人の平均より
+# 走れている選手を加点する。蓄積は keirin_learn.py の夜間処理から呼ばれる。
+RIDER_HIST_CSV = os.path.join(DATA_DIR, "rider_history.csv")
+VENUE_STATS_JSON = os.path.join(DATA_DIR, "rider_venue_stats.json")
+RIDER_HIST_FIELDS = ["date", "venue_key", "race", "car", "name", "order", "kimarite"]
+
+
+def records_from_page(venue_key, date_ymd, page):
+    """parse_results_page の結果(会場・日付単位)から、選手レコードのリストを作る"""
+    out = []
+    for race, res in (page or {}).items():
+        names = res.get("names") or {}
+        for car, order in (res.get("orders") or {}).items():
+            name = names.get(car)
+            if not name:
+                continue
+            out.append({"date": str(date_ymd), "venue_key": venue_key,
+                        "race": race, "car": car, "name": name,
+                        "order": order if order else "",
+                        "kimarite": res.get("kimarite", "") if order == 1 else ""})
+    return out
+
+
+def record_rider_results(records):
+    """選手レコードを rider_history.csv に追記する(重複は (date,venue,race,name) で除く)。
+    戻り値: 追加した件数"""
+    if not records:
+        return 0
+    seen = set()
+    if os.path.exists(RIDER_HIST_CSV):
+        with open(RIDER_HIST_CSV, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                seen.add((r["date"], r["venue_key"], r["race"], r["name"]))
+    new = []
+    for rec in records:
+        key = (str(rec["date"]), rec["venue_key"], str(rec["race"]), rec["name"])
+        if key in seen:
+            continue
+        seen.add(key)
+        new.append({k: rec.get(k, "") for k in RIDER_HIST_FIELDS})
+    if not new:
+        return 0
+    os.makedirs(DATA_DIR, exist_ok=True)
+    exists = os.path.exists(RIDER_HIST_CSV)
+    with open(RIDER_HIST_CSV, "a", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=RIDER_HIST_FIELDS)
+        if not exists:
+            w.writeheader()
+        w.writerows(new)
+    return len(new)
+
+
+def rebuild_venue_stats():
+    """rider_history.csv 全体から、選手×会場の統計JSONを作り直す。
+    着順なし(落車・失格など)は9着扱い(直近成績の form と同じ物差し)。
+    戻り値: 統計に載った選手数"""
+    stats = {}
+    if not os.path.exists(RIDER_HIST_CSV):
+        return 0
+    with open(RIDER_HIST_CSV, encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            name = r["name"]
+            if not name:
+                continue
+            try:
+                order = int(r["order"]) if r["order"] else 9
+            except ValueError:
+                order = 9
+            st = stats.setdefault(name, {"n": 0, "sum": 0, "venues": {}})
+            st["n"] += 1
+            st["sum"] += order
+            v = st["venues"].setdefault(r["venue_key"],
+                                        {"n": 0, "sum": 0, "w": 0, "t3": 0, "kim": {}})
+            v["n"] += 1
+            v["sum"] += order
+            if order == 1:
+                v["w"] += 1
+                kim = r.get("kimarite") or ""
+                if kim:
+                    v["kim"][kim] = v["kim"].get(kim, 0) + 1
+            if order <= 3:
+                v["t3"] += 1
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(VENUE_STATS_JSON, "w", encoding="utf-8") as f:
+        json.dump(stats, f, ensure_ascii=False)
+    return len(stats)

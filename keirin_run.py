@@ -12,11 +12,14 @@ import keirin_web as kw
 from keirin_line import send_line
 from datetime import datetime
 
-from keirin_track import JST, save_learn_rows, save_picks, session_already_sent
+from keirin_track import JST, save_learn_rows, save_picks, save_picks_u, session_already_sent
 
 VENUES = [v.strip() for v in (os.environ.get("VENUES") or "").split(",") if v.strip()]
 SESSION = os.environ.get("SESSION") or "all"   # day:通常開催のみ / midnight:ミッドナイトのみ / all:両方
-N_PICKS = int(os.environ.get("N_PICKS") or 3)  # 本命・荒れ、それぞれ何レース選ぶか(絞り込み優先で少なめ)
+N_PICKS = int(os.environ.get("N_PICKS") or 3)  # (旧方式)本命・荒れ、それぞれ何レース選ぶか
+# 2026-11-18 方式変更: 本命/狙い目の2枠は廃止し、おすすめレースだけを配信する
+N_OSUSUME = int(os.environ.get("N_OSUSUME") or 5)   # おすすめレースの上限(1セッションあたり)
+OSUSUME_DEFAULT_MIN = float(os.environ.get("OSUSUME_MIN_SCORE") or 16.0)   # 学習しきい値が無い間の、おすすめ度の下限
 
 
 def discord_targeted():
@@ -125,6 +128,27 @@ def apply_min_score(honmei, ara):
     return honmei, ara
 
 
+def apply_min_score_osusume(picks):
+    """おすすめレースの間引き(2026-11-18 方式変更)。
+    1) 学習しきい値(会場別→全体の順)があればそれを、無ければ OSUSUME_DEFAULT_MIN を下限にする
+    2) 星の数が一定未満のものは常に外す(データが少ないうちの安全弁)
+    3) 昼セグメントでは、スコア20未満を外す(弱セグメントの抑制。改善ラウンド1・Bを継続)
+    どれも、全部外すと0件になる場合は、念のため残りの候補から残す"""
+    def threshold_for(x):
+        per_venue = (k.MIN_SCORE_VENUE or {}).get("osusume") or {}
+        if x.get("venue_key") in per_venue:
+            return per_venue[x["venue_key"]]     # 会場別の学習値があればそちらを優先
+        learned = (k.MIN_SCORE or {}).get("osusume")
+        return learned if learned is not None else OSUSUME_DEFAULT_MIN
+
+    kept = [x for x in picks if x["osusume"] >= threshold_for(x)]
+    kept2 = [x for x in kept if k.stars(x["osusume"]).count("★") >= MIN_STARS]
+    kept3 = kept2
+    if is_daytime_segment():
+        kept3 = [x for x in kept2 if x["osusume"] >= DAYTIME_SUPPRESS_SCORE]
+    return kept3 or kept2 or kept or picks[:1]
+
+
 SESSION_HOURS = {"day": (6, 14), "midnight": (18, 24)}   # 日本時間でこの時間帯に動いたときだけ送る
 
 
@@ -163,8 +187,8 @@ def main():
         return
 
     # 1段目: 基本データで候補を絞る
-    cand_h, cand_a = k.pick(results, only_upcoming=True, n=N_PICKS + 2)
-    keys = {(x["venue_key"], x["race"]) for x in cand_h + cand_a}
+    cand_o = k.pick_osusume(results, only_upcoming=True, n=N_OSUSUME + 3)
+    keys = {(x["venue_key"], x["race"]) for x in cand_o}
     cand = [rc for rc in results if (rc["venue"], rc["race"]) in keys]
     print(f"候補 {len(cand)}レース")
     if k.ENRICH and cand:
@@ -173,26 +197,26 @@ def main():
         except Exception as e:
             print("選手ページの取得でエラー。基本データだけで続行:", e)
 
-    # 2段目: 直近成績も入れた評価で、最終の「おすすめレース」を決める
-    honmei, ara = k.pick(cand, only_upcoming=True, n=N_PICKS)
-    honmei, ara = apply_min_score(honmei, ara)
-    if not honmei and not ara:
+    # 2段目: 直近成績と当所相性も入れた評価で、最終の「おすすめレース」を決める
+    picks = k.pick_osusume(cand, only_upcoming=True, n=N_OSUSUME)
+    picks = apply_min_score_osusume(picks)
+    if not picks:
         print("対象レースがないため送信しません")
         return
 
     url = k.page_url()
-    full_text = k.build_message(honmei, ara, level=3, enforce_limit=False)   # ページ用(フル)
+    full_text = k.build_message_u(picks, level=3, enforce_limit=False)   # ページ用(フル)
 
     try:
         kw.publish(full_text, label="予想配信")
     except Exception as e:
         print("ページの更新に失敗(配信は続けます):", e)
     try:
-        k.send_forecast(honmei, ara, full_text, url)   # Discord宛てはEmbed(カード形式)で送る
+        k.send_forecast_u(picks, full_text, url)   # Discord宛てはEmbed(カード形式)で送る
     except Exception as e:
         print("送信に失敗しました(ページには反映済みです):", e)
 
-    save_picks(honmei, ara, results, session=SESSION)
+    save_picks_u(picks, results, session=SESSION)
     try:
         save_learn_rows(results)   # 評価の重みを学習するための元データ(的中率とは別に、全レースぶん残す)
     except Exception as e:
