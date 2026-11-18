@@ -145,13 +145,13 @@ def build_weekly_report(rows, now=None):
     out.append("")
 
     out.append("【累計】")
-    for kind, label in (("osusume", "⭐おすすめ"), ("honmei", "🎯本命"), ("ara", "🔥狙い目")):
-        ln = _line(label, stats([r for r in rows if r["kind"] == kind]), note_ref=False)
-        if ln:
-            out.append(ln)
     all_s = stats(rows)
     if all_s:
-        out.append(_line("合計", all_s, note_ref=False))
+        out.append(_line("🏁トータル", all_s, note_ref=False))
+    osu_ln = _line("⭐おすすめ", stats([r for r in rows if r["kind"] == "osusume"]),
+                   note_ref=False)
+    if osu_ln:
+        out.append(osu_ln)
     return "\n".join(out)
 
 

@@ -553,6 +553,25 @@ def _fit(v, limit=1024):
     return v if len(v) <= limit else v[:limit - 1] + "…"
 
 
+def report_stat_lines(rows):
+    """結果報告用の集計行。おすすめ一本化に合わせ、トータル＋⭐おすすめだけを出す
+    (本命/狙い目の内訳は出さない)。全部がおすすめの日は、おすすめ行のみにする。"""
+    lines = []
+    osu = [r for r in rows if r["kind"] == "osusume"]
+    if osu and len(osu) == len(rows):
+        s = stats(rows)
+        if s:
+            lines.append(fmt_stats(KIND_LABEL["osusume"], s))
+        return lines
+    s = stats(rows)
+    if s:
+        lines.append(fmt_stats("🏁トータル", s))
+    so = stats(osu)
+    if so:
+        lines.append(fmt_stats(KIND_LABEL["osusume"], so))
+    return lines
+
+
 def build_report_embeds(new_rows):
     """結果報告のEmbed(カード)版。集計はテキスト版 build_report と同じものを使う"""
     now = datetime.now(JST)
@@ -562,11 +581,7 @@ def build_report_embeds(new_rows):
     src = day_rows or new_rows
 
     fields = []
-    day_stats = []
-    for kind, label in KIND_LABEL.items():
-        s = stats([r for r in src if r["kind"] == kind])
-        if s:
-            day_stats.append(fmt_stats(label, s))
+    day_stats = report_stat_lines(src)
     fields.append({"name": "【本日の結果】" if day_rows else "【今回の結果】",
                    "inline": False, "value": _fit("\n".join(day_stats) or "記録なし")})
     hits = [r for r in src if str(r["hit"]) == "1"]
@@ -586,11 +601,7 @@ def build_report_embeds(new_rows):
                "fields": fields}]
 
     fields2 = []
-    total = []
-    for kind, label in KIND_LABEL.items():
-        s = stats([r for r in all_rows if r["kind"] == kind])
-        if s:
-            total.append(fmt_stats(label, s))
+    total = report_stat_lines(all_rows)
     if total:
         fields2.append({"name": "【累計】", "inline": False,
                         "value": _fit("\n".join(total))})
@@ -670,10 +681,7 @@ def build_report(new_rows):
     out = [f"📊 結果報告 {now.month}/{now.day} {now.hour}:{now.minute:02d}", ""]
     out.append("【本日の結果】" if day_rows else "【今回の結果】")
     src = day_rows or new_rows
-    for kind, label in KIND_LABEL.items():
-        s = stats([r for r in src if r["kind"] == kind])
-        if s:
-            out.append(fmt_stats(label, s))
+    out += report_stat_lines(src)
     hits = [r for r in src if str(r["hit"]) == "1"]
     if hits:
         out.append("✅的中: " + " / ".join(
@@ -690,10 +698,7 @@ def build_report(new_rows):
         out += ["・" + t for t in pu]
     out.append("")
     out.append("【累計】")
-    for kind, label in KIND_LABEL.items():
-        s = stats([r for r in all_rows if r["kind"] == kind])
-        if s:
-            out.append(fmt_stats(label, s))
+    out += report_stat_lines(all_rows)
     # 会場別(累計6件以上)
     by_v = {}
     for r in all_rows:
