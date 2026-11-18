@@ -1,0 +1,70 @@
+[
+ {
+  "time": "13:00",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "honmei",
+    "venue": "静岡",
+    "venue_key": "shizuoka",
+    "cup": "20261118",
+    "day": 2,
+    "race": 6,
+    "axis": 7,
+    "axis_name": "熊谷芽緯",
+    "partners": [
+     1,
+     2,
+     4
+    ],
+    "bet": "7→1,2,4 (2車単 軸流し)",
+    "score": 30.74,
+    "tri": {
+     "first": 7,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      4,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "ara",
+    "venue": "小松島",
+    "venue_key": "komatsushima",
+    "cup": "20261118",
+    "day": null,
+    "race": 11,
+    "axis": 2,
+    "axis_name": "小原周祐",
+    "partners": [
+     4,
+     3,
+     7
+    ],
+    "bet": "2→4,3,7 (2車単 軸流し)",
+    "score": 13.51,
+    "tri": {
+     "first": 2,
+     "second": [
+      4,
+      3
+     ],
+     "third": [
+      4,
+      3,
+      7,
+      1
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
