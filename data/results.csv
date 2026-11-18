@@ -634,3 +634,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261118-ara-komatsushima-11,20261118,13:00,ara,小松島,komatsushima,11,2,小原周祐,4-3-7,13.51,3,3,6,2,,0,300,0,ok,0,600,0
 20261118-honmei-shizuoka-6,20261118,13:00,honmei,静岡,shizuoka,6,7,熊谷芽緯,1-2-4,30.74,1,7,6,2,,0,300,0,ok,0,600,0
 20261118-ara-utsunomiya-3,20261118,19:55,ara,宇都宮,utsunomiya,3,1,鈴木那樹,2-3-5,13.23,1,1,5,3,逃げ,1,300,190,ok,0,600,0
+20261118-honmei-utsunomiya-9,20261118,19:55,honmei,宇都宮,utsunomiya,9,1,竹山陵太,3-2-5,30.67,1,1,4,3,,0,300,0,ok,0,600,0
