@@ -639,3 +639,4 @@ pick_id,date,slot,kind,venue,venue_key,race,axis,axis_name,partners,score,axis_f
 20261119-osusume-fukui-2,20261119,08:26,osusume,福井,fukui,2,7,高尾貴美歌,3-1-4,31.3,1,7,3,5,,1,300,380,ok,1,600,3780
 20261119-osusume-fukui-3,20261119,08:26,osusume,福井,fukui,3,7,下山聖斗,1-5-2,26.1,1,7,5,1,,1,300,300,ok,1,600,440
 20261119-osusume-fukui-4,20261119,08:26,osusume,福井,fukui,4,1,田上晃也,4-3-6,39.41,1,1,4,6,,1,300,140,ok,1,600,260
+20261119-osusume-seibuen-5,20261119,08:26,osusume,西武園,seibuen,5,5,藤田周磨,1-4-7,31.11,1,5,1,4,逃げ,1,300,120,ok,1,600,660
