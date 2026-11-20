@@ -1,0 +1,132 @@
+[
+ {
+  "time": "08:16",
+  "session": "day",
+  "picks": [
+   {
+    "kind": "osusume",
+    "venue": "小田原",
+    "venue_key": "odawara",
+    "cup": "20261121",
+    "day": 1,
+    "race": 4,
+    "axis": 4,
+    "axis_name": "真木寛斗",
+    "partners": [
+     1,
+     2,
+     5
+    ],
+    "bet": "4→1,2,5 (2車単 軸流し)",
+    "score": 33.68,
+    "tri": {
+     "first": 4,
+     "second": [
+      1,
+      2
+     ],
+     "third": [
+      1,
+      2,
+      5,
+      7
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "osusume",
+    "venue": "福井",
+    "venue_key": "fukui",
+    "cup": "20261121",
+    "day": null,
+    "race": 1,
+    "axis": 1,
+    "axis_name": "奥井迪",
+    "partners": [
+     2,
+     4,
+     6
+    ],
+    "bet": "1→2,4,6 (2車単 軸流し)",
+    "score": 27.36,
+    "tri": {
+     "first": 1,
+     "second": [
+      2,
+      4
+     ],
+     "third": [
+      2,
+      4,
+      6,
+      5
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "osusume",
+    "venue": "豊橋",
+    "venue_key": "toyohashi",
+    "cup": "20261121",
+    "day": 1,
+    "race": 7,
+    "axis": 2,
+    "axis_name": "椎木尾拓哉",
+    "partners": [
+     7,
+     1,
+     4
+    ],
+    "bet": "2→7,1,4 (2車単 軸流し)",
+    "score": 23.57,
+    "tri": {
+     "first": 2,
+     "second": [
+      7,
+      1
+     ],
+     "third": [
+      7,
+      1,
+      4,
+      3
+     ],
+     "points": 6
+    }
+   },
+   {
+    "kind": "osusume",
+    "venue": "福井",
+    "venue_key": "fukui",
+    "cup": "20261121",
+    "day": null,
+    "race": 5,
+    "axis": 5,
+    "axis_name": "田上晃也",
+    "partners": [
+     3,
+     1,
+     2
+    ],
+    "bet": "5→3,1,2 (2車単 軸流し)",
+    "score": 20.78,
+    "tri": {
+     "first": 5,
+     "second": [
+      3,
+      1
+     ],
+     "third": [
+      3,
+      1,
+      2,
+      4
+     ],
+     "points": 6
+    }
+   }
+  ]
+ }
+]
